@@ -12,7 +12,7 @@ description = "Pure-compute SAML 2.0 decode + XML-DSig / exclusive-C14N verifica
 # Hardened, read-only XML tree. DTDs are rejected by default (allow_dtd=false →
 # Error::DtdDetected), entities are never expanded, and nodes_limit caps the
 # node count — exactly the lockdown a security worker over hostile input needs.
-roxmltree = "0.20"
+roxmltree = "0.21"
 # Base64 (standard + URL-safe) for the POST/redirect bindings.
 base64 = "0.22"
 # Raw DEFLATE inflate (redirect binding); pure-Rust miniz_oxide backend.
