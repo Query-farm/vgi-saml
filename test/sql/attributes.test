@@ -1,0 +1,71 @@
+# name: test/sql/attributes.test
+# group: [vgi_saml]
+#
+# The fan-out scalars (attributes / assertions) return LIST<STRUCT>; UNNEST them
+# over a column for the spec's long-form per-row result. (DuckDB table functions
+# reject correlated column args, so the fan-outs are scalar + UNNEST.)
+
+require-env VGI_SAML_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'vgi-saml' AS saml (TYPE vgi, LOCATION '${VGI_SAML_WORKER}');
+
+# Direct call on a literal assertion: multi-valued attribute fans out via UNNEST.
+query TT
+SELECT a.name, a.value
+FROM UNNEST(saml.main.attributes('<saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"><saml:AttributeStatement><saml:Attribute Name="role"><saml:AttributeValue>admin</saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS _(a)
+ORDER BY a.value;
+----
+role	admin
+role	user
+
+statement ok
+CREATE TABLE raw_saml AS
+  SELECT 'signed' AS login_id, content AS saml_response FROM read_text('test/data/signed_response_rsa.xml');
+
+# Spec example 2 (as scalar + UNNEST): explode attributes and filter by name.
+query TT
+SELECT a.name, a.value
+FROM raw_saml r, UNNEST(saml.main.attributes(r.saml_response)) AS _(a)
+WHERE a.name = 'role'
+ORDER BY a.value;
+----
+role	admin
+role	user
+
+# The email attribute carries its xsi:type and friendly name.
+query TT
+SELECT a.friendly_name, a.value_type
+FROM raw_saml r, UNNEST(saml.main.attributes(r.saml_response)) AS _(a)
+WHERE a.friendly_name = 'email';
+----
+email	xs:string
+
+# conditions(): the validity window + audiences.
+query T
+SELECT list_contains((saml.main.conditions(saml_response)).audiences, 'https://sp.example.com')
+FROM raw_saml;
+----
+true
+
+# authn(): the session index + auth context class.
+query T
+SELECT (saml.main.authn(saml_response)).session_index FROM raw_saml;
+----
+_sess123
+
+# assertions() fan-out: one assertion, parented under the Response.
+query ITT
+SELECT a.idx, a.signed, a.parent
+FROM raw_saml r, UNNEST(saml.main.assertions(r.saml_response)) AS _(a);
+----
+0	true	Response
+
+statement ok
+USE memory;
+
+statement ok
+DETACH saml;

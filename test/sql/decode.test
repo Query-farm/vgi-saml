@@ -1,0 +1,67 @@
+# name: test/sql/decode.test
+# group: [vgi_saml]
+#
+# Core decode + transport over committed golden fixtures (signxml/lxml-signed
+# SAML). We LOAD vgi (NOT `require vgi`), ATTACH the worker by env LOCATION, and
+# assert the spec's example fields. We do NOT SET search_path (we CREATE TABLE in
+# the default catalog), so worker calls are fully qualified as saml.main.<fn>.
+
+require-env VGI_SAML_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'vgi-saml' AS saml (TYPE vgi, LOCATION '${VGI_SAML_WORKER}');
+
+# Load the golden corpus into a raw_saml table (name, saml_response VARCHAR).
+statement ok
+CREATE TABLE raw_saml AS
+  SELECT 'signed'   AS name, content AS saml_response FROM read_text('test/data/signed_response_rsa.xml')
+  UNION ALL SELECT 'tampered', content FROM read_text('test/data/tampered_response_rsa.xml')
+  UNION ALL SELECT 'xsw3',     content FROM read_text('test/data/xsw3_response_rsa.xml')
+  UNION ALL SELECT 'unsigned', content FROM read_text('test/data/unsigned_response.xml')
+  UNION ALL SELECT 'ec',       content FROM read_text('test/data/signed_response_ec.xml');
+
+# Example 1: decode core fields.
+query TTTT
+WITH d AS (SELECT saml.main.decode(saml_response) AS s FROM raw_saml WHERE name='signed')
+SELECT (s).subject, (s).issuer, (s).audience, (s).authn_context FROM d;
+----
+alice@example.com	https://idp.example.com/saml	https://sp.example.com	urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport
+
+# message_type discriminates.
+query T
+SELECT saml.main.message_type((SELECT saml_response FROM raw_saml WHERE name='signed'));
+----
+Response
+
+query T
+SELECT saml.main.message_type(content) FROM read_text('test/data/authnrequest.xml');
+----
+AuthnRequest
+
+# Counts + signed flag.
+query II
+SELECT (saml.main.decode((SELECT saml_response FROM raw_saml WHERE name='signed'))).assertion_count,
+       (saml.main.decode((SELECT saml_response FROM raw_saml WHERE name='signed'))).encrypted_count;
+----
+1	0
+
+# well_formed triage: valid XML that isn't SAML → not-saml; a DTD-bearing blob
+# is flagged unparsed (the XXE / billion-laughs gate).
+query T
+SELECT (saml.main.well_formed('<html><body/></html>')).kind;
+----
+not-saml
+
+query T
+SELECT (saml.main.well_formed('<?xml version="1.0"?><!DOCTYPE x><a/>')).kind;
+----
+dtd-present
+
+statement ok
+USE memory;
+
+statement ok
+DETACH saml;

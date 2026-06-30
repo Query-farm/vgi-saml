@@ -1,0 +1,24 @@
+# vgi-lint-check configuration for the vgi-saml worker.
+#
+# The worker's natural examples are LATERAL joins over a user-held column of SAML
+# messages (e.g. `FROM raw_saml r, LATERAL saml.main.attributes(r.saml_response)`),
+# which reference a table the linter's local, data-free sandbox does not have. So
+# we run a static-metadata-only lint here and turn execution off; the guaranteed-
+# runnable, self-contained examples still ship as `vgi.executable_examples` /
+# `vgi.example_queries` (literal-XML SQL), and the REAL end-to-end execution is the
+# repo's haybarn SQLLogic E2E (`./run_tests.sh`), which attaches the worker and runs
+# the spec's example queries against committed fixtures.
+#
+# All static metadata rules (titles, descriptions, keywords, source_url,
+# classifying tags, per-argument docs, column comments, example queries) remain
+# enabled and gate at `info`.
+[tool.vgi-lint-check]
+select = ["ALL"]
+ignore = []
+fail_on = "info"
+
+[tool.vgi-lint-check.execution]
+enabled = false
+
+[tool.vgi-lint-check.options]
+column_comment_min_ratio = 0.8

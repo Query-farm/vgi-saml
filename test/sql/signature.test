@@ -1,0 +1,72 @@
+# name: test/sql/signature.test
+# group: [vgi_saml]
+#
+# XML-DSig structural verification over real signxml/lxml-signed fixtures
+# (RSA-SHA256 + ECDSA-P256) and a tampered variant. sig_valid is math against
+# the EMBEDDED cert; trust is the caller's JOIN.
+
+require-env VGI_SAML_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'vgi-saml' AS saml (TYPE vgi, LOCATION '${VGI_SAML_WORKER}');
+
+statement ok
+CREATE TABLE raw_saml AS
+  SELECT 'signed'   AS name, content AS saml_response FROM read_text('test/data/signed_response_rsa.xml')
+  UNION ALL SELECT 'tampered', content FROM read_text('test/data/tampered_response_rsa.xml')
+  UNION ALL SELECT 'unsigned', content FROM read_text('test/data/unsigned_response.xml')
+  UNION ALL SELECT 'ec',       content FROM read_text('test/data/signed_response_ec.xml');
+
+# Validly-signed RSA response: signed, c14n_ok, digest_ok, sig_valid all true.
+query TTTTT
+WITH s AS (SELECT saml.main.signature(saml_response) AS sig FROM raw_saml WHERE name='signed')
+SELECT (sig).signed, (sig).c14n_ok, (sig).digest_ok, (sig).sig_valid, (sig).algo FROM s;
+----
+true	true	true	true	RS256
+
+# The signer cert fingerprint matches the committed cert's SHA-256 (the Golden-
+# SAML join key). signature() must surface exactly that hash.
+query T
+SELECT (saml.main.signature(saml_response)).signer_cert_sha256
+       = trim((SELECT content FROM read_text('test/data/cert_rsa.sha256')))
+FROM raw_saml WHERE name='signed';
+----
+true
+
+# ECDSA-P256 signed response verifies too, with algo ES256.
+query TT
+WITH s AS (SELECT saml.main.signature(saml_response) AS sig FROM raw_saml WHERE name='ec')
+SELECT (sig).sig_valid, (sig).algo FROM s;
+----
+true	ES256
+
+# Tampered-after-signing: the recomputed digest breaks, but SignatureValue still
+# verifies over the (untouched) SignedInfo — the classic Golden-SAML-adjacent split.
+query TT
+WITH s AS (SELECT saml.main.signature(saml_response) AS sig FROM raw_saml WHERE name='tampered')
+SELECT (sig).digest_ok, (sig).sig_valid FROM s;
+----
+false	true
+
+# Unsigned response: no signature.
+query T
+SELECT (saml.main.signature(saml_response)).signed FROM raw_saml WHERE name='unsigned';
+----
+false
+
+# signatures() fan-out: one signature, scope assertion, valid.
+query ITT
+SELECT s.idx, s.scope, s.sig_valid
+FROM raw_saml r, UNNEST(saml.main.signatures(r.saml_response)) AS _(s)
+WHERE r.name='signed';
+----
+0	assertion	true
+
+statement ok
+USE memory;
+
+statement ok
+DETACH saml;

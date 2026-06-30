@@ -1,0 +1,67 @@
+# name: test/sql/anomalies.test
+# group: [vgi_saml]
+#
+# XSW / Golden-SAML structural anomaly detection — the worker's reason to exist.
+# Positive (clean) and negative (attack) fixtures.
+
+require-env VGI_SAML_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'vgi-saml' AS saml (TYPE vgi, LOCATION '${VGI_SAML_WORKER}');
+
+statement ok
+CREATE TABLE raw_saml AS
+  SELECT 'signed'   AS name, content AS saml_response FROM read_text('test/data/signed_response_rsa.xml')
+  UNION ALL SELECT 'tampered', content FROM read_text('test/data/tampered_response_rsa.xml')
+  UNION ALL SELECT 'xsw3',     content FROM read_text('test/data/xsw3_response_rsa.xml')
+  UNION ALL SELECT 'comment',  content FROM read_text('test/data/comment_splice_rsa.xml');
+
+# A clean, validly-signed response trips no structural flags.
+query I
+SELECT len(saml.main.anomalies(saml_response)) FROM raw_saml WHERE name='signed';
+----
+0
+
+# XSW3 (evil unsigned assertion as a sibling of the signed one): the consumer's
+# assertion is not the signed one, and there is more than one assertion.
+query TT
+SELECT list_contains(saml.main.anomalies(saml_response), 'multiple-assertions'),
+       list_contains(saml.main.anomalies(saml_response), 'signature-covers-other-element')
+FROM raw_saml WHERE name='xsw3';
+----
+true	true
+
+# Tampered content → the reference digest no longer matches → digest-mismatch.
+query T
+SELECT list_contains(saml.main.anomalies(saml_response), 'digest-mismatch')
+FROM raw_saml WHERE name='tampered';
+----
+true
+
+# Comment-splitting NameID (the 2018 Duo/Cisco class) is flagged.
+query T
+SELECT list_contains(saml.main.anomalies(saml_response), 'nameid-comment-splitting')
+FROM raw_saml WHERE name='comment';
+----
+true
+
+# Example 3 from the spec: only the suspicious rows.
+query T
+SELECT name
+FROM raw_saml
+WHERE len(saml.main.anomalies(saml_response)) > 0
+   OR (saml.main.signature(saml_response)).digest_ok = false
+ORDER BY name;
+----
+comment
+tampered
+xsw3
+
+statement ok
+USE memory;
+
+statement ok
+DETACH saml;

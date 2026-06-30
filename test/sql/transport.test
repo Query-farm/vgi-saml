@@ -1,0 +1,53 @@
+# name: test/sql/transport.test
+# group: [vgi_saml]
+#
+# The transport plumbing: base64 (POST binding), base64+raw-DEFLATE (Redirect
+# binding), and the content-sniffing decode chain — plus hostile-input triage.
+
+require-env VGI_SAML_WORKER
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'vgi-saml' AS saml (TYPE vgi, LOCATION '${VGI_SAML_WORKER}');
+
+# b64decode: standard base64 → bytes.
+query T
+SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR;
+----
+<saml>
+
+# Bad base64 → NULL (treat dirty data as missing, never abort the scan).
+query T
+SELECT saml.main.b64decode('!!! not base64 !!!') IS NULL;
+----
+true
+
+# POST binding: decode() content-sniffs a base64 SAMLResponse straight to fields.
+query T
+SELECT (saml.main.decode(content)).subject FROM read_text('test/data/signed_response_rsa.b64');
+----
+alice@example.com
+
+# Redirect binding: base64 + raw DEFLATE → message_type via the sniffer.
+query T
+SELECT saml.main.message_type(content) FROM read_text('test/data/signed_response_rsa.deflate.b64');
+----
+Response
+
+# Example 5 from the spec: inflate(b64decode(...)) yields the XML text.
+query T
+SELECT saml.main.inflate(saml.main.b64decode(content)) LIKE '<samlp:Response%'
+FROM read_text('test/data/signed_response_rsa.deflate.b64');
+----
+true
+
+# A DEFLATE bomb / garbage does not inflate (and never OOMs the worker).
+query T
+SELECT saml.main.inflate('not deflate at all'::BLOB) IS NULL;
+----
+true
+
+statement ok
+DETACH saml;

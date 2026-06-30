@@ -1,0 +1,38 @@
+[package]
+name = "saml-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Pure-compute SAML 2.0 decode + XML-DSig / exclusive-C14N verification + XSW / Golden-SAML detection engine for the vgi-saml VGI worker (no Arrow/VGI deps)"
+
+[dependencies]
+# Hardened, read-only XML tree. DTDs are rejected by default (allow_dtd=false →
+# Error::DtdDetected), entities are never expanded, and nodes_limit caps the
+# node count — exactly the lockdown a security worker over hostile input needs.
+roxmltree = "0.20"
+# Base64 (standard + URL-safe) for the POST/redirect bindings.
+base64 = "0.22"
+# Raw DEFLATE inflate (redirect binding); pure-Rust miniz_oxide backend.
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+# URL-decode for `unwrap`.
+percent-encoding = "2"
+# Digest computation (reference digests + cert fingerprint).
+sha2 = "0.10"
+# Signer-cert parse: subject / issuer / SPKI / fingerprint.
+x509-parser = "0.16"
+# Pure-Rust signature math — no native xmlsec1 / OpenSSL toolchain.
+rsa = { version = "0.9", features = ["sha2"] }
+p256 = { version = "0.13", features = ["ecdsa"] }
+p384 = { version = "0.13", features = ["ecdsa"] }
+ecdsa = "0.16"
+ed25519-dalek = { version = "2", features = ["pkcs8"] }
+
+[dev-dependencies]
+# Zero-panic fuzzing over arbitrary / truncated XML and transport bytes.
+proptest = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
