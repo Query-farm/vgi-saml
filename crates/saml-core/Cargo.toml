@@ -20,7 +20,7 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 # URL-decode for `unwrap`.
 percent-encoding = "2"
 # Digest computation (reference digests + cert fingerprint).
-sha2 = "0.10"
+sha2 = "0.11"
 # Signer-cert parse: subject / issuer / SPKI / fingerprint.
 x509-parser = "0.16"
 # Pure-Rust signature math — no native xmlsec1 / OpenSSL toolchain.
