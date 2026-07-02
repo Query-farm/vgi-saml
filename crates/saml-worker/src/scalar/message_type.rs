@@ -45,6 +45,7 @@ impl ScalarFunction for MessageType {
                  `message_type(resp)` -> 'Response'.",
                 "message type, saml kind, response, authnrequest, logoutrequest, assertion, \
                  discriminator, root element, classify saml",
+                "Decode",
                 "scalar/message_type.rs",
             ),
             ..Default::default()

@@ -82,9 +82,13 @@ impl ScalarFunction for Signature {
                           sig_valid is math against the EMBEDDED cert — trust is your JOIN."
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.signature(r.saml_response)).sig_valid FROM raw_saml r;"
+                sql: "SELECT (saml.main.signature('<saml:Assertion \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                      <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'))\
+                      .sig_valid;"
                     .into(),
-                description: "Check that a SAML message's embedded signature is internally valid."
+                description: "Check whether a SAML message's embedded signature is internally \
+                              valid (false here — the assertion is unsigned)."
                     .into(),
                 expected_output: None,
             }],
@@ -107,6 +111,7 @@ impl ScalarFunction for Signature {
                  Trust is your JOIN.",
                 "xml-dsig, signature, verify, c14n, exclusive canonicalization, digest, \
                  signer_cert_sha256, golden saml, rsa-sha256, ecdsa, eddsa, keyinfo, x509",
+                "Verify",
                 "scalar/signature.rs",
             ),
             ..Default::default()

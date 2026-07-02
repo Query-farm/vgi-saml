@@ -40,8 +40,10 @@ impl ScalarFunction for WellFormed {
                           dtd-present / entity-blocked / truncated / encoding-error. Never panics."
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.well_formed('not a saml message')).*;".into(),
-                description: "Classify why a blob is not a usable SAML message.".into(),
+                sql: "SELECT (saml.main.well_formed('not a saml message')).kind;".into(),
+                description: "Classify why a blob is not a usable SAML message (kind = \
+                              'not-saml' here)."
+                    .into(),
                 expected_output: None,
             }],
             tags: crate::meta::object_tags(
@@ -56,6 +58,7 @@ impl ScalarFunction for WellFormed {
                  XXE / billion-laughs attempts.",
                 "well formed, validate, xxe, billion laughs, dtd, entity, triage, bad base64, \
                  truncated, not xml, not saml, parse error",
+                "Diagnostics",
                 "scalar/well_formed.rs",
             ),
             ..Default::default()

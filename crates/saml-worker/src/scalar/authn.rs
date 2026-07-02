@@ -39,7 +39,13 @@ impl ScalarFunction for AuthnFn {
                           class_ref VARCHAR, decl_ref VARCHAR, authenticating_authority VARCHAR)"
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.authn(r.saml_response)).class_ref FROM raw_saml r;".into(),
+                sql: "SELECT (saml.main.authn('<saml:Assertion \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AuthnStatement>\
+                      <saml:AuthnContext><saml:AuthnContextClassRef>\
+                      urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
+                      </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
+                      </saml:Assertion>')).class_ref;"
+                    .into(),
                 description: "Read the AuthnContext class (e.g. detect MFA downgrade).".into(),
                 expected_output: None,
             }],
@@ -53,6 +59,7 @@ impl ScalarFunction for AuthnFn {
                 "Get the AuthnStatement/AuthnContext (instant, session, auth class) as a struct.",
                 "authn, authncontext, authnstatement, session index, authninstant, class ref, \
                  authentication method, mfa downgrade, sso session",
+                "Decode",
                 "scalar/authn.rs",
             ),
             ..Default::default()

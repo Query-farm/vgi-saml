@@ -50,8 +50,10 @@ impl ScalarFunction for Conditions {
                           'expired' verdict — compare to now() yourself."
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.conditions(r.saml_response)).not_on_or_after \
-                      FROM raw_saml r;"
+                sql: "SELECT (saml.main.conditions('<saml:Assertion \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                      <saml:Conditions NotBefore=\"2026-01-01T00:00:00Z\" \
+                      NotOnOrAfter=\"2026-01-01T01:00:00Z\"/></saml:Assertion>')).not_on_or_after;"
                     .into(),
                 description: "Read the assertion validity window for an own-skew expiry check."
                     .into(),
@@ -68,6 +70,7 @@ impl ScalarFunction for Conditions {
                  against `now()`.",
                 "conditions, validity window, notbefore, notonorafter, audience, audiencerestriction, \
                  onetimeuse, proxyrestriction, expiry, timestamptz",
+                "Decode",
                 "scalar/conditions.rs",
             ),
             ..Default::default()

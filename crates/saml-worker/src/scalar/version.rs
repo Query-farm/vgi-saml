@@ -32,6 +32,7 @@ impl ScalarFunction for SamlVersion {
                  diagnostics and confirming which build is attached.",
                 "Return the saml worker version string, e.g. `saml_version()` -> '0.1.0'.",
                 "version, build version, saml_version, diagnostics, worker version, semver",
+                "Diagnostics",
                 "scalar/version.rs",
             ),
             ..Default::default()

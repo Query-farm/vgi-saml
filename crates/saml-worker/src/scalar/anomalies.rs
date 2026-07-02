@@ -31,8 +31,13 @@ impl ScalarFunction for Anomalies {
                     .into(),
             return_type: Some(list_varchar_type()),
             examples: vec![FunctionExample {
-                sql: "SELECT saml.main.anomalies(r.saml_response) FROM raw_saml r;".into(),
-                description: "Surface signature-wrapping / structural red flags per message."
+                sql: "SELECT saml.main.anomalies('<samlp:Response \
+                      xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                      <saml:Assertion ID=\"_a1\"/><saml:Assertion ID=\"_a2\"/></samlp:Response>');"
+                    .into(),
+                description: "Surface signature-wrapping / structural red flags (here, \
+                              multiple-assertions) for a message."
                     .into(),
                 expected_output: None,
             }],
@@ -53,6 +58,7 @@ impl ScalarFunction for Anomalies {
                 "xsw, signature wrapping, golden saml, anomalies, multiple assertions, \
                  digest mismatch, detached signature, comment splitting, attack detection, \
                  detection engineering",
+                "Detect",
                 "scalar/anomalies.rs",
             ),
             ..Default::default()

@@ -71,11 +71,11 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  The defensible value is **bulk security compute**: running **XML Signature \
                  Wrapping (XSW)** and **Golden-SAML** detection across millions of historical SAML \
                  messages in a forensic lake — in SQL, joinable against your IdP cert inventory and \
-                 login telemetry. `anomalies()` flags the structural invariants every XSW1-XSW8 \
+                 login telemetry. The worker flags the structural invariants every XSW1-XSW8 \
                  attack violates (multiple assertions, a signature that covers a different element \
                  than the consumer reads, duplicate/dangling reference IDs, an unsigned assertion \
-                 inside a signed response, comment-splitting NameIDs, digest mismatches), while \
-                 `signature()` hands you `signer_cert_sha256` so a `LEFT JOIN` against your \
+                 inside a signed response, comment-splitting NameIDs, digest mismatches), and \
+                 surfaces the signer certificate SHA-256 fingerprint so a left join against your \
                  known-good IdP certs surfaces the Golden-SAML smoking gun (a cryptographically \
                  perfect signature from a key you do not trust).\n\n\
                  **Trust stays with you.** `sig_valid = true` means the embedded cert signed these \
@@ -88,18 +88,17 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  loader rejects DTDs and entities unparsed (defeating XXE and \
                  billion-laughs/exponential-entity-expansion), bounds document size and inflate \
                  ratio (DEFLATE-bomb guard), and never panics — a hostile message returns an error \
-                 verdict, it does not crash the scan. `well_formed()` reports the reason \
-                 (`dtd-present` / `entity-blocked` double as XXE signals).\n\n\
-                 **Function surface.** Scalars: `decode`, `conditions`, `authn`, `signature`, \
-                 `anomalies`, `well_formed`, `message_type`, and the transport helpers \
-                 `b64decode` / `inflate` / `unwrap`. Fan-out scalars returning `LIST<STRUCT>` (use \
-                 `UNNEST(...)` over a column): `attributes` (explode attribute statements), \
-                 `signatures` (every signature with its scope — the multi-sig view that makes XSW \
-                 visible), and `assertions` (each assertion and its parent element). Pairs with \
-                 `vgi-x509` (cert chains / CA trust), `vgi-jwt` / \
-                 `vgi-cbor` (sibling token decoders), and `vgi-pii` / `vgi-mask` (scrub decoded \
-                 NameIDs before sharing extracts). Part of the [Query.Farm](https://query.farm) \
-                 VGI ecosystem of DuckDB workers — see the \
+                 verdict, it does not crash the scan. A well-formedness triage verdict reports the \
+                 reason, and its dtd-present / entity-blocked kinds double as XXE and \
+                 billion-laughs signals.\n\n\
+                 **When to reach for it.** Use it whenever you already hold a column of raw or \
+                 encoded SAML messages and need to shred, verify, or threat-hunt over them at \
+                 warehouse scale rather than one message at a time in a browser plugin. List the \
+                 `saml.main` schema to discover the individual functions and their signatures. \
+                 Pairs with [vgi-x509](https://github.com/Query-farm/vgi-x509) (cert chains / CA \
+                 trust), the sibling token decoders vgi-jwt / vgi-cbor, and vgi-pii / vgi-mask \
+                 (scrub decoded NameIDs before sharing extracts). Part of the \
+                 [Query.Farm](https://query.farm) VGI ecosystem of DuckDB workers — see the \
                  [source repository](https://github.com/Query-farm/vgi-saml)."
                     .to_string(),
             ),
@@ -185,12 +184,26 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 ),
                 (
                     "vgi.doc_md".to_string(),
-                    "The single schema for the `saml` worker. It holds the decode functions \
-                     (`decode`, `conditions`, `authn`, `attributes`, `assertions`, \
-                     `message_type`), the XML-DSig verification functions (`signature`, \
-                     `signatures`), the attack-detection function (`anomalies`), the \
-                     hostile-input triage (`well_formed`), and the transport helpers \
-                     (`b64decode`, `inflate`, `unwrap`)."
+                    "The single schema for the saml worker. Its functions fall into five \
+                     capability areas: decoding SAML 2.0 messages into typed rows, verifying \
+                     XML-DSig signatures with exclusive C14N against the embedded certificate, \
+                     detecting XML Signature Wrapping and Golden-SAML, triaging hostile or \
+                     malformed input, and decoding the base64 / DEFLATE / URL-encoded transport \
+                     layer. List the schema to discover the individual functions and their \
+                     signatures."
+                        .to_string(),
+                ),
+                (
+                    // VGI413: the ordered category registry that drives navigation / SEO;
+                    // every object carries a `vgi.category` naming one of these names.
+                    "vgi.categories".to_string(),
+                    r#"[
+  {"name":"Decode","description":"Parse SAML 2.0 messages into typed rows: message type, subject, issuer, audience, the Conditions validity window, AuthnContext, attribute statements, and assertions."},
+  {"name":"Verify","description":"Verify XML-DSig signatures with exclusive XML canonicalization and per-Reference digests against the message's embedded certificate."},
+  {"name":"Detect","description":"Surface XML Signature Wrapping (XSW) and Golden-SAML structural attack signals for bulk forensic scanning."},
+  {"name":"Transport","description":"Decode the SAML transport envelope: base64, raw DEFLATE (HTTP-Redirect binding), and URL-encoding."},
+  {"name":"Diagnostics","description":"Triage hostile or malformed input into a safe verdict and report the running worker build."}
+]"#
                         .to_string(),
                 ),
                 (

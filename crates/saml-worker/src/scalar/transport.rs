@@ -42,6 +42,7 @@ impl ScalarFunction for B64Decode {
                 "Base64-decode a string to bytes (standard or URL-safe), e.g. the SAMLResponse POST \
                  field; NULL if not base64.",
                 "base64, b64decode, decode, post binding, samlresponse, url-safe base64, bytes",
+                "Transport",
                 "scalar/transport.rs",
             ),
             ..Default::default()
@@ -89,9 +90,13 @@ impl ScalarFunction for Inflate {
                 .into(),
             return_type: Some(DataType::Utf8),
             examples: vec![FunctionExample {
-                sql: "SELECT saml.main.inflate(saml.main.b64decode(req)) FROM redirect_params;"
+                sql: "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoy\
+                      M3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbA\
+                      QA='));"
                     .into(),
-                description: "Inflate a redirect-binding SAMLRequest to its XML text.".into(),
+                description: "Base64-decode then raw-DEFLATE-inflate a redirect-binding \
+                              SAMLRequest to its XML text."
+                    .into(),
                 expected_output: None,
             }],
             tags: crate::meta::object_tags(
@@ -105,6 +110,7 @@ impl ScalarFunction for Inflate {
                  failure.",
                 "inflate, deflate, decompress, redirect binding, samlrequest, zlib, \
                  decompression bomb, gzip",
+                "Transport",
                 "scalar/transport.rs",
             ),
             ..Default::default()
@@ -156,8 +162,11 @@ impl ScalarFunction for Unwrap {
                 .into(),
             return_type: Some(DataType::Utf8),
             examples: vec![FunctionExample {
-                sql: "SELECT saml.main.unwrap(req) FROM redirect_params;".into(),
-                description: "Recover the XML from a URL-encoded redirect-binding parameter."
+                sql: "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM\
+                      6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D');"
+                    .into(),
+                description: "Recover the XML from a URL-encoded, base64-wrapped transport \
+                              parameter."
                     .into(),
                 expected_output: None,
             }],
@@ -172,6 +181,7 @@ impl ScalarFunction for Unwrap {
                  NULL on failure.",
                 "unwrap, url decode, percent decode, redirect binding, post binding, base64, \
                  deflate, saml transport, query parameter",
+                "Transport",
                 "scalar/transport.rs",
             ),
             ..Default::default()

@@ -99,14 +99,15 @@ impl ScalarFunction for Attributes {
             "Explode SAML Attributes",
             "Return a SAML assertion's AttributeStatement(s) as a LIST<STRUCT(statement_idx, name, \
              name_format, friendly_name, value, value_type)>, one struct per AttributeValue. \
-             UNNEST it to long form to pivot or join attributes downstream (multi-valued \
-             attributes fan out): `FROM raw_saml r, UNNEST(saml.main.attributes(r.saml_response)) \
-             AS _(a)`. Returns an empty list for a message with no attributes and NULL for a NULL \
-             input.",
+             UNNEST it over a column to explode attributes to long form, so multi-valued \
+             attributes (roles, groups) fan out into one row each and can be pivoted or joined \
+             downstream. Returns an empty list for a message with no attributes and NULL for a \
+             NULL input.",
             "Return SAML attribute values as a `LIST<STRUCT(statement_idx, name, name_format, \
              friendly_name, value, value_type)>`; UNNEST to explode to long form.",
             "saml attributes, attributestatement, attributevalue, claims, roles, groups, explode, \
              unnest, long form, list of struct, pivot",
+            "Decode",
             "scalar/fanout.rs",
         );
         tags.push((
@@ -126,10 +127,15 @@ impl ScalarFunction for Attributes {
                     .into(),
             return_type: Some(list_of(attribute_fields())),
             examples: vec![FunctionExample {
-                sql: "SELECT a.name, a.value FROM raw_saml r, \
-                      UNNEST(saml.main.attributes(r.saml_response)) AS _(a);"
+                sql: "SELECT a.name, a.value FROM UNNEST(saml.main.attributes('<saml:Assertion \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AttributeStatement>\
+                      <saml:Attribute Name=\"role\"><saml:AttributeValue>admin\
+                      </saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue>\
+                      </saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS _(a) \
+                      ORDER BY a.value;"
                     .into(),
-                description: "Explode each message's attributes to long form for joining.".into(),
+                description: "Explode a multi-valued attribute to long form (one row per value)."
+                    .into(),
                 expected_output: None,
             }],
             tags,
@@ -195,16 +201,16 @@ impl ScalarFunction for Signatures {
             "All SAML Signatures",
             "Return every ds:Signature in a SAML message as a LIST<STRUCT(idx, scope, \
              references_id, signed_element, c14n_ok, digest_ok, sig_valid, signer_cert_sha256)>, \
-             one struct per signature. UNNEST it for the multi-signature view that makes XML \
-             Signature Wrapping visible — a response with two assertions where only one is signed, \
-             or a signature whose signed_element is not the element a consumer reads, jumps out: \
-             `FROM raw_saml r, UNNEST(saml.main.signatures(r.saml_response)) AS _(s)`. Empty list \
-             for an unsigned message; NULL for a NULL input.",
+             one struct per signature. UNNEST it over a column for the multi-signature view that \
+             makes XML Signature Wrapping visible — a response with two assertions where only one \
+             is signed, or a signature whose signed_element is not the element a consumer reads, \
+             jumps out. Empty list for an unsigned message; NULL for a NULL input.",
             "Return every signature as a `LIST<STRUCT(idx, scope, references_id, signed_element, \
              c14n_ok, digest_ok, sig_valid, signer_cert_sha256)>`; UNNEST for the XSW multi-sig \
              view.",
             "saml signatures, multi signature, xsw, signature wrapping, scope, signed element, \
              digest_ok, sig_valid, signer_cert_sha256, unnest, list of struct",
+            "Verify",
             "scalar/fanout.rs",
         );
         FunctionMetadata {
@@ -214,10 +220,16 @@ impl ScalarFunction for Signatures {
                 .into(),
             return_type: Some(list_of(signature_row_fields())),
             examples: vec![FunctionExample {
-                sql: "SELECT s.* FROM raw_saml r, \
-                      UNNEST(saml.main.signatures(r.saml_response)) AS _(s);"
+                sql: "SELECT s.idx, s.scope, s.sig_valid \
+                      FROM UNNEST(saml.main.signatures('<samlp:Response \
+                      xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" \
+                      xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\
+                      <ds:Signature><ds:SignedInfo><ds:Reference URI=\"#_a1\"/></ds:SignedInfo>\
+                      </ds:Signature><saml:Assertion ID=\"_a1\"/></samlp:Response>')) AS _(s) \
+                      ORDER BY s.idx;"
                     .into(),
-                description: "Enumerate every signature to spot wrapping.".into(),
+                description: "Enumerate every signature and its scope to spot wrapping.".into(),
                 expected_output: None,
             }],
             tags,
@@ -283,15 +295,16 @@ impl ScalarFunction for Assertions {
         let tags = crate::meta::object_tags(
             "List SAML Assertions",
             "Return every Assertion in a SAML message as a LIST<STRUCT(idx, id, signed, issuer, \
-             subject, in_response_to, parent)>, one struct per assertion. UNNEST it to list \
-             assertions with their parent element — a legitimate assertion is a child of the \
-             Response, so an assertion parented under Extensions, Object, or another Assertion is \
-             an XSW red flag: `FROM raw_saml r, UNNEST(saml.main.assertions(r.saml_response)) AS \
-             _(a)`. Empty list for a message with no assertions; NULL for a NULL input.",
+             subject, in_response_to, parent)>, one struct per assertion. UNNEST it over a column \
+             to list assertions with their parent element — a legitimate assertion is a child of \
+             the Response, so an assertion parented under Extensions, Object, or another Assertion \
+             is an XSW red flag. Empty list for a message with no assertions; NULL for a NULL \
+             input.",
             "Return every assertion as a `LIST<STRUCT(idx, id, signed, issuer, subject, \
              in_response_to, parent)>`; UNNEST it (parent reveals wrapping).",
             "saml assertions, assertion list, wrapping, parent element, signed, issuer, subject, \
              nameid, xsw, unnest, list of struct",
+            "Decode",
             "scalar/fanout.rs",
         );
         FunctionMetadata {
@@ -300,8 +313,11 @@ impl ScalarFunction for Assertions {
                 .into(),
             return_type: Some(list_of(assertion_row_fields())),
             examples: vec![FunctionExample {
-                sql: "SELECT a.* FROM raw_saml r, \
-                      UNNEST(saml.main.assertions(r.saml_response)) AS _(a);"
+                sql: "SELECT a.idx, a.id, a.parent \
+                      FROM UNNEST(saml.main.assertions('<samlp:Response \
+                      xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                      <saml:Assertion ID=\"_a1\"/></samlp:Response>')) AS _(a) ORDER BY a.idx;"
                     .into(),
                 description: "Enumerate assertions and their parents to reveal wrapping.".into(),
                 expected_output: None,

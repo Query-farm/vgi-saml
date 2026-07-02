@@ -64,9 +64,13 @@ impl ScalarFunction for Decode {
                           input — returns null fields + signed=false (see well_formed)."
                 .into(),
             examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.decode(r.saml_response)).subject FROM raw_saml r;".into(),
-                description: "Decode a base64 SAMLResponse column to its subject + core fields."
+                sql: "SELECT (saml.main.decode('<saml:Assertion \
+                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                      <saml:Issuer>https://idp.example.com</saml:Issuer><saml:Subject>\
+                      <saml:NameID>alice@example.com</saml:NameID></saml:Subject>\
+                      </saml:Assertion>')).subject;"
                     .into(),
+                description: "Decode a SAML assertion to its subject + core fields.".into(),
                 expected_output: None,
             }],
             tags: crate::meta::object_tags(
@@ -86,6 +90,7 @@ impl ScalarFunction for Decode {
                  validity window, authn context, status, ids and counts; null fields on bad input.",
                 "decode saml, samlresponse, assertion, subject, issuer, audience, nameid, \
                  conditions, authn context, status, base64, deflate, redirect binding, post binding",
+                "Decode",
                 "scalar/decode.rs",
             ),
             ..Default::default()
