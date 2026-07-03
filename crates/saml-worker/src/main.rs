@@ -184,13 +184,25 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                 ),
                 (
                     "vgi.doc_md".to_string(),
-                    "The single schema for the saml worker. Its functions fall into five \
-                     capability areas: decoding SAML 2.0 messages into typed rows, verifying \
-                     XML-DSig signatures with exclusive C14N against the embedded certificate, \
-                     detecting XML Signature Wrapping and Golden-SAML, triaging hostile or \
-                     malformed input, and decoding the base64 / DEFLATE / URL-encoded transport \
-                     layer. List the schema to discover the individual functions and their \
-                     signatures."
+                    "SAML 2.0 forensic decoding and XML-DSig verification, in-database.\n\n\
+                     ## What it does\n\n\
+                     Turns an opaque SAML message — a base64 / DEFLATE / URL-encoded blob or raw \
+                     XML — into typed, queryable rows, and independently re-verifies its \
+                     cryptographic signature so you can trust (or distrust) what an identity \
+                     provider asserted, without leaving SQL.\n\n\
+                     ## Key concepts\n\n\
+                     - **Exclusive C14N.** Signatures are checked by re-canonicalizing the signed \
+                     XML with exclusive canonicalization and recomputing per-Reference digests \
+                     against the message's embedded certificate — pure Rust, no key store, no \
+                     network egress.\n\
+                     - **Attack detection.** Structural signals for XML Signature Wrapping (XSW) \
+                     and Golden-SAML surface tampering that a naive parser would miss.\n\
+                     - **Hostile-input safety.** Every entry point is total and panic-free, with \
+                     DTD / entity expansion disabled and decompression bomb-bounded.\n\n\
+                     ## When to use\n\n\
+                     Reach for this schema to audit or bulk-scan SAML responses and assertions \
+                     offline: confirming who signed a message, whether its signature and validity \
+                     window hold, and whether it carries attack fingerprints."
                         .to_string(),
                 ),
                 (
