@@ -25,7 +25,7 @@ sha2 = "0.10"
 x509-parser = "0.16"
 # Pure-Rust signature math — no native xmlsec1 / OpenSSL toolchain.
 rsa = { version = "0.9", features = ["sha2"] }
-p256 = { version = "0.13", features = ["ecdsa"] }
+p256 = { version = "0.14", features = ["ecdsa"] }
 p384 = { version = "0.13", features = ["ecdsa"] }
 ecdsa = "0.16"
 ed25519-dalek = { version = "2", features = ["pkcs8"] }
