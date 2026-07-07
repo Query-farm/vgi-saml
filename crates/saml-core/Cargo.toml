@@ -28,7 +28,7 @@ rsa = { version = "0.9", features = ["sha2"] }
 p256 = { version = "0.13", features = ["ecdsa"] }
 p384 = { version = "0.13", features = ["ecdsa"] }
 ecdsa = "0.16"
-ed25519-dalek = { version = "2", features = ["pkcs8"] }
+ed25519-dalek = { version = "3", features = ["pkcs8"] }
 
 [dev-dependencies]
 # Zero-panic fuzzing over arbitrary / truncated XML and transport bytes.
