@@ -70,8 +70,9 @@ impl ScalarFunction for AuthnFn {
         vec![ArgSpec::any_column(
             "msg",
             0,
-            "The SAML message (raw XML, base64, base64+DEFLATE, or URL-encoded) whose \
-             AuthnStatement to extract.",
+            "A SAML 2.0 message whose AuthnStatement to extract. The worker content-sniffs and \
+             normalizes the transport wrapper automatically, whether the message arrived as raw \
+             XML or an encoded SAMLResponse blob, so pass the value straight from your column.",
         )]
     }
 

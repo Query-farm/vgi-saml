@@ -70,8 +70,10 @@ fn msg_arg() -> Vec<ArgSpec> {
     vec![ArgSpec::any_column(
         "msg",
         0,
-        "The SAML message (raw XML, base64, base64+DEFLATE, or URL-encoded). Fan its rows out with \
-         UNNEST(...) over a column.",
+        "A SAML 2.0 message to fan out into rows with UNNEST(...) over a column. The worker \
+         content-sniffs and normalizes the transport wrapper automatically, whether the message \
+         arrived as raw XML or an encoded SAMLResponse blob, so pass the value straight from your \
+         column.",
     )]
 }
 

@@ -52,7 +52,8 @@ impl ScalarFunction for B64Decode {
         vec![ArgSpec::any_column(
             "data",
             0,
-            "The base64 text to decode; standard or URL-safe, padded or not.",
+            "The base64-encoded text to decode. Both common base64 alphabets are recognized and \
+             padding is optional; input that is not valid base64 yields NULL.",
         )]
     }
     fn on_bind(&self, _params: &BindParams) -> Result<BindResponse> {

@@ -136,6 +136,136 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          named version.",
                         "SELECT saml.main.saml_version() AS version",
                     ),
+                    (
+                        "anomalies_multi",
+                        "This SAML Response carries two assertions. Does it show the \
+                         'multiple-assertions' structural attack indicator? Return one boolean \
+                         column named has_multi. XML: '<samlp:Response \
+                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\">\
+                         <saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com\
+                         </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
+                         </samlp:Response>'.",
+                        "SELECT list_contains(saml.main.anomalies('<samlp:Response \
+                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\">\
+                         <saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com\
+                         </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
+                         </samlp:Response>'), 'multiple-assertions') AS has_multi",
+                    ),
+                    (
+                        "count_assertions",
+                        "How many assertions are inside this SAML Response? Return one column \
+                         named n. XML: '<samlp:Response \
+                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\">\
+                         <saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com\
+                         </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
+                         </samlp:Response>'.",
+                        "SELECT len(saml.main.assertions('<samlp:Response \
+                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\">\
+                         <saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com\
+                         </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
+                         </samlp:Response>')) AS n",
+                    ),
+                    (
+                        "count_attribute_values",
+                        "How many attribute values does this assertion's AttributeStatement \
+                         contain? Return one column named n. XML: '<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                         <saml:AttributeStatement><saml:Attribute Name=\"role\">\
+                         <saml:AttributeValue>admin</saml:AttributeValue>\
+                         <saml:AttributeValue>user</saml:AttributeValue></saml:Attribute>\
+                         </saml:AttributeStatement></saml:Assertion>'.",
+                        "SELECT len(saml.main.attributes('<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                         <saml:AttributeStatement><saml:Attribute Name=\"role\">\
+                         <saml:AttributeValue>admin</saml:AttributeValue>\
+                         <saml:AttributeValue>user</saml:AttributeValue></saml:Attribute>\
+                         </saml:AttributeStatement></saml:Assertion>')) AS n",
+                    ),
+                    (
+                        "authn_class",
+                        "What AuthnContext class reference did the identity provider assert in \
+                         this assertion? Return one column named class_ref. XML: '<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:AuthnStatement AuthnInstant=\"2024-01-01T00:00:00Z\">\
+                         <saml:AuthnContext><saml:AuthnContextClassRef>\
+                         urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
+                         </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
+                         </saml:Assertion>'.",
+                        "SELECT (saml.main.authn('<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:AuthnStatement AuthnInstant=\"2024-01-01T00:00:00Z\">\
+                         <saml:AuthnContext><saml:AuthnContextClassRef>\
+                         urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
+                         </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
+                         </saml:Assertion>')).class_ref AS class_ref",
+                    ),
+                    (
+                        "b64decode_text",
+                        "Base64-decode the string 'PHNhbWw+' and return its UTF-8 text as one \
+                         column named decoded.",
+                        "SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded",
+                    ),
+                    (
+                        "conditions_window",
+                        "Does this assertion's Conditions validity window stay open past the start \
+                         of 2030? Return one boolean column named expires_after_2030. XML: \
+                         '<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" \
+                         ID=\"_a\"><saml:Conditions NotBefore=\"2020-01-01T00:00:00Z\" \
+                         NotOnOrAfter=\"2035-06-01T00:00:00Z\"><saml:AudienceRestriction>\
+                         <saml:Audience>https://sp.example.com</saml:Audience>\
+                         </saml:AudienceRestriction></saml:Conditions></saml:Assertion>'.",
+                        "SELECT ((saml.main.conditions('<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:Conditions NotBefore=\"2020-01-01T00:00:00Z\" \
+                         NotOnOrAfter=\"2035-06-01T00:00:00Z\"><saml:AudienceRestriction>\
+                         <saml:Audience>https://sp.example.com</saml:Audience>\
+                         </saml:AudienceRestriction></saml:Conditions></saml:Assertion>'))\
+                         .not_on_or_after > TIMESTAMPTZ '2030-01-01') AS expires_after_2030",
+                    ),
+                    (
+                        "inflate_redirect",
+                        "Base64-decode then raw-DEFLATE-inflate this HTTP-Redirect-binding \
+                         SAMLRequest and return its XML text as one column named xml. Value: \
+                         'sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA='.",
+                        "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA=')) AS xml",
+                    ),
+                    (
+                        "signature_valid",
+                        "Is the embedded XML-DSig signature on this assertion internally valid? \
+                         Return one boolean column named sig_valid. XML: '<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'.",
+                        "SELECT (saml.main.signature('<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'))\
+                         .sig_valid AS sig_valid",
+                    ),
+                    (
+                        "count_signatures",
+                        "How many XML-DSig signatures does this SAML message contain? Return one \
+                         column named n. XML: '<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'.",
+                        "SELECT len(saml.main.signatures('<saml:Assertion \
+                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')) \
+                         AS n",
+                    ),
+                    (
+                        "unwrap_transport",
+                        "Recover the SAML XML from this URL-encoded, base64-wrapped transport \
+                         parameter and return it as one column named xml. Value: \
+                         'PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D'.",
+                        "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D') AS xml",
+                    ),
                 ]),
             ),
             ("vgi.author".to_string(), "Query.Farm".to_string()),
@@ -189,20 +319,33 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                      Turns an opaque SAML message — a base64 / DEFLATE / URL-encoded blob or raw \
                      XML — into typed, queryable rows, and independently re-verifies its \
                      cryptographic signature so you can trust (or distrust) what an identity \
-                     provider asserted, without leaving SQL.\n\n\
+                     provider asserted, without leaving SQL. Each capability is a separate \
+                     function that takes one content-sniffed message argument; list this schema to \
+                     discover them and their exact signatures.\n\n\
                      ## Key concepts\n\n\
-                     - **Exclusive C14N.** Signatures are checked by re-canonicalizing the signed \
-                     XML with exclusive canonicalization and recomputing per-Reference digests \
-                     against the message's embedded certificate — pure Rust, no key store, no \
-                     network egress.\n\
-                     - **Attack detection.** Structural signals for XML Signature Wrapping (XSW) \
-                     and Golden-SAML surface tampering that a naive parser would miss.\n\
+                     - **Signature verification is real, not implied.** The outermost XML-DSig \
+                     signature is re-checked here — SignedInfo is re-canonicalized with exclusive \
+                     C14N, per-Reference digests are recomputed, and SignatureValue is verified \
+                     (RSA / ECDSA / EdDSA) against the certificate embedded in the message itself. \
+                     A validity result reports whether that embedded key signed these exact bytes; \
+                     it never asserts the key is trusted, so Golden-SAML detection is a downstream \
+                     JOIN of the signer certificate SHA-256 fingerprint against your own IdP cert \
+                     inventory. No key store, no network egress.\n\
+                     - **Attack detection.** Structural red flags for XML Signature Wrapping (XSW) \
+                     and Golden-SAML — multiple assertions, a signature that covers a different \
+                     element than the consumer reads, duplicate/dangling reference IDs, digest \
+                     mismatches, comment-splitting NameIDs — surface tampering a naive parser \
+                     misses.\n\
                      - **Hostile-input safety.** Every entry point is total and panic-free, with \
-                     DTD / entity expansion disabled and decompression bomb-bounded.\n\n\
+                     DTD / entity expansion disabled (defeating XXE and billion-laughs) and \
+                     decompression bomb-bounded.\n\n\
                      ## When to use\n\n\
                      Reach for this schema to audit or bulk-scan SAML responses and assertions \
-                     offline: confirming who signed a message, whether its signature and validity \
-                     window hold, and whether it carries attack fingerprints."
+                     offline: confirming who signed a message, reading its subject / issuer / \
+                     audience / validity window / AuthnContext / attribute statements, checking \
+                     whether its signature holds, and flagging attack fingerprints — over millions \
+                     of historical messages, joinable against your cert inventory and login \
+                     telemetry."
                         .to_string(),
                 ),
                 (

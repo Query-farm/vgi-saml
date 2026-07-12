@@ -69,8 +69,10 @@ impl ScalarFunction for WellFormed {
         vec![ArgSpec::any_column(
             "msg",
             0,
-            "The SAML message (raw XML, base64, base64+DEFLATE, or URL-encoded). \
-             Classified without expanding DTDs or entities.",
+            "A SAML 2.0 message to triage for well-formedness. It is classified without expanding \
+             DTDs or entities, and the worker content-sniffs and normalizes the transport wrapper \
+             automatically, whether the message arrived as raw XML or an encoded SAMLResponse \
+             blob, so pass the value straight from your column.",
         )]
     }
 

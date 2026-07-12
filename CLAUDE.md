@@ -44,7 +44,7 @@ cargo fmt --all -- --check
 cargo test --workspace --all-features        # unit + c14n oracle + golden + zero-panic proptest
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
 ./run_tests.sh                               # haybarn SQLLogic E2E
-uvx --from vgi-lint-check vgi-lint lint --catalog saml --no-execute "$PWD/target/release/saml-worker"
+uvx --from vgi-lint-check vgi-lint lint "$PWD/target/release/saml-worker" --execute --ai --ai-concurrency 1 --fail-on info
 ```
 
 ## Gotchas
@@ -63,9 +63,10 @@ uvx --from vgi-lint-check vgi-lint lint --catalog saml --no-execute "$PWD/target
 - `value_type` is the **literal** `xsi:type` QName (`xs:string`), not `string`.
 - vgi-lint flags any data-type word in an argument description (e.g. the word
   "any" matches the `ANY` type) — describe *meaning*, not type.
-- vgi-lint runs static-only here (`execution.enabled = false` in `vgi-lint.toml`)
-  because the natural examples are LATERAL over a user table; the real execution
-  is the haybarn E2E.
+- vgi-lint execution is ENABLED: every shipped example / agent test task uses a
+  literal SAML message, so `--execute` runs them against a live worker with no
+  external dependency. The natural LATERAL-over-a-column shape is additionally
+  covered by the haybarn E2E against committed signed fixtures.
 
 ## Non-goals (do not add without a feature gate)
 
