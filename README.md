@@ -117,7 +117,6 @@ SELECT saml.main.inflate(saml.main.b64decode(req)) AS xml FROM redirect_params;
 | `b64decode(s)` | `BLOB` | Base64 decode (standard + URL-safe). |
 | `inflate(b)` | `VARCHAR` | Raw-DEFLATE inflate (Redirect binding), bomb-bounded. |
 | `unwrap(s)` | `VARCHAR` | URL-decode + base64 + inflate-sniff → XML. |
-| `saml_version()` | `VARCHAR` | Worker version. |
 
 ## Security model
 

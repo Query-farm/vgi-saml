@@ -23,28 +23,34 @@ impl ScalarFunction for B64Decode {
         "b64decode"
     }
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT saml.main.b64decode('PHNhbWw+');".into(),
+            description: "Decode a base64 SAMLResponse form field to raw bytes.".into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "Base64 Decode",
+            "Decode a base64 string to a `BLOB`, accepting both the standard (`+/`) and URL-safe \
+             (`-_`) alphabets, padded or unpadded. This is the HTTP-POST-binding step: a \
+             SAMLResponse form field is base64 of the XML (or of DEFLATE-compressed XML for the \
+             redirect binding). Returns NULL when the input is not valid base64.",
+            "Base64-decode a string to bytes (standard or URL-safe), e.g. the SAMLResponse POST \
+             field; NULL if not base64.",
+            "base64, b64decode, decode, post binding, samlresponse, url-safe base64, bytes",
+            "Transport",
+            "scalar/transport.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Base64-decode a string to bytes (accepts standard and URL-safe \
                           alphabets, padded or not); NULL on failure"
                 .into(),
             return_type: Some(DataType::Binary),
-            examples: vec![FunctionExample {
-                sql: "SELECT saml.main.b64decode('PHNhbWw+');".into(),
-                description: "Decode a base64 SAMLResponse form field to raw bytes.".into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "Base64 Decode",
-                "Decode a base64 string to a BLOB, accepting both the standard (`+/`) and URL-safe \
-                 (`-_`) alphabets, padded or unpadded. This is the HTTP-POST-binding step: a \
-                 SAMLResponse form field is base64 of the XML (or of DEFLATE-compressed XML for the \
-                 redirect binding). Returns NULL when the input is not valid base64.",
-                "Base64-decode a string to bytes (standard or URL-safe), e.g. the SAMLResponse POST \
-                 field; NULL if not base64.",
-                "base64, b64decode, decode, post binding, samlresponse, url-safe base64, bytes",
-                "Transport",
-                "scalar/transport.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }
@@ -85,35 +91,41 @@ impl ScalarFunction for Inflate {
         "inflate"
     }
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoy\
+                  M3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbA\
+                  QA='));"
+                .into(),
+            description: "Base64-decode then raw-DEFLATE-inflate a redirect-binding \
+                          SAMLRequest to its XML text."
+                .into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "DEFLATE Inflate",
+            "Inflate raw-DEFLATE (and zlib-wrapped) bytes to text — the HTTP-Redirect binding \
+             compresses the XML with raw DEFLATE before base64. The inflate is bounded by a \
+             64 MiB cap so a DEFLATE bomb (tiny payload, gigabytes inflated) is rejected rather \
+             than exhausting memory. Returns NULL when the bytes do not inflate or exceed the \
+             cap.",
+            "Inflate raw-DEFLATE bytes (redirect binding) to text, bomb-bounded; NULL on \
+             failure.",
+            "inflate, deflate, decompress, redirect binding, samlrequest, zlib, \
+             decompression bomb, gzip",
+            "Transport",
+            "scalar/transport.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Raw-DEFLATE-inflate bytes to text (HTTP-Redirect binding), bounded \
                           against decompression bombs; NULL on failure"
                 .into(),
             return_type: Some(DataType::Utf8),
-            examples: vec![FunctionExample {
-                sql: "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoy\
-                      M3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbA\
-                      QA='));"
-                    .into(),
-                description: "Base64-decode then raw-DEFLATE-inflate a redirect-binding \
-                              SAMLRequest to its XML text."
-                    .into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "DEFLATE Inflate",
-                "Inflate raw-DEFLATE (and zlib-wrapped) bytes to text — the HTTP-Redirect binding \
-                 compresses the XML with raw DEFLATE before base64. The inflate is bounded by a \
-                 64 MiB cap so a DEFLATE bomb (tiny payload, gigabytes inflated) is rejected rather \
-                 than exhausting memory. Returns NULL when the bytes do not inflate or exceed the \
-                 cap.",
-                "Inflate raw-DEFLATE bytes (redirect binding) to text, bomb-bounded; NULL on \
-                 failure.",
-                "inflate, deflate, decompress, redirect binding, samlrequest, zlib, \
-                 decompression bomb, gzip",
-                "Transport",
-                "scalar/transport.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }
@@ -157,34 +169,39 @@ impl ScalarFunction for Unwrap {
         "unwrap"
     }
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM\
+                  6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D');"
+                .into(),
+            description: "Recover the XML from a URL-encoded, base64-wrapped transport parameter."
+                .into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "Unwrap SAML Transport",
+            "Unwrap a SAML transport parameter to its XML text in one call: URL-decode the \
+             value, base64-decode it, and content-sniff whether the result is XML or \
+             DEFLATE-compressed XML (inflating if so). Handles both the HTTP-Redirect \
+             (URL-encoded base64 of raw DEFLATE) and HTTP-POST (base64) shapes. Returns NULL \
+             when the value does not resolve to XML.",
+            "URL-decode + base64 + inflate-sniff a redirect/POST parameter to its SAML XML; \
+             NULL on failure.",
+            "unwrap, url decode, percent decode, redirect binding, post binding, base64, \
+             deflate, saml transport, query parameter",
+            "Transport",
+            "scalar/transport.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Unwrap a redirect/POST-binding parameter (URL-decode + base64 + \
                           DEFLATE sniff) to its SAML XML text; NULL on failure"
                 .into(),
             return_type: Some(DataType::Utf8),
-            examples: vec![FunctionExample {
-                sql: "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM\
-                      6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D');"
-                    .into(),
-                description: "Recover the XML from a URL-encoded, base64-wrapped transport \
-                              parameter."
-                    .into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "Unwrap SAML Transport",
-                "Unwrap a SAML transport parameter to its XML text in one call: URL-decode the \
-                 value, base64-decode it, and content-sniff whether the result is XML or \
-                 DEFLATE-compressed XML (inflating if so). Handles both the HTTP-Redirect \
-                 (URL-encoded base64 of raw DEFLATE) and HTTP-POST (base64) shapes. Returns NULL \
-                 when the value does not resolve to XML.",
-                "URL-decode + base64 + inflate-sniff a redirect/POST parameter to its SAML XML; \
-                 NULL on failure.",
-                "unwrap, url decode, percent decode, redirect binding, post binding, base64, \
-                 deflate, saml transport, query parameter",
-                "Transport",
-                "scalar/transport.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

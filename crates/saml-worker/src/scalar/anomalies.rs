@@ -23,6 +23,41 @@ impl ScalarFunction for Anomalies {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT saml.main.anomalies('<samlp:Response \
+                  xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
+                  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                  <saml:Assertion ID=\"_a1\"/><saml:Assertion ID=\"_a2\"/></samlp:Response>');"
+                .into(),
+            description: "Surface signature-wrapping / structural red flags (here, \
+                          multiple-assertions) for a message."
+                .into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "SAML Signature-Wrapping Anomalies",
+            "Return the structural anomaly flags for a SAML message as a `LIST(VARCHAR)`. These \
+             are the invariants every XML Signature Wrapping (XSW1-XSW8) attack violates plus \
+             the XXE-class text-extraction tells: multiple-assertions, \
+             signature-covers-other-element, reference-uri-id-mismatch, \
+             unsigned-assertion-in-signed-response, signature-placement-anomaly, \
+             detached-signature, nameid-comment-splitting, digest-mismatch, \
+             c14n-inclusive-on-moved-assertion, and encrypted-assertion-present. An EMPTY list \
+             is not a safety guarantee — Golden SAML (a forgery with a stolen but valid IdP \
+             key) leaves no structural trace, so combine this with a trust-table JOIN on \
+             signer_cert_sha256.",
+            "List XSW / structural red flags for a SAML message (e.g. `multiple-assertions`, \
+             `signature-covers-other-element`, `digest-mismatch`); empty != safe.",
+            "xsw, signature wrapping, golden saml, anomalies, multiple assertions, \
+             digest mismatch, detached signature, comment splitting, attack detection, \
+             detection engineering",
+            "Detect",
+            "scalar/anomalies.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description:
                 "Flag XSW (XML Signature Wrapping) / Golden-SAML / structural anomalies as \
@@ -30,37 +65,8 @@ impl ScalarFunction for Anomalies {
                           guarantee)"
                     .into(),
             return_type: Some(list_varchar_type()),
-            examples: vec![FunctionExample {
-                sql: "SELECT saml.main.anomalies('<samlp:Response \
-                      xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
-                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
-                      <saml:Assertion ID=\"_a1\"/><saml:Assertion ID=\"_a2\"/></samlp:Response>');"
-                    .into(),
-                description: "Surface signature-wrapping / structural red flags (here, \
-                              multiple-assertions) for a message."
-                    .into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "SAML Signature-Wrapping Anomalies",
-                "Return the structural anomaly flags for a SAML message as a LIST<VARCHAR>. These \
-                 are the invariants every XML Signature Wrapping (XSW1-XSW8) attack violates plus \
-                 the XXE-class text-extraction tells: multiple-assertions, \
-                 signature-covers-other-element, reference-uri-id-mismatch, \
-                 unsigned-assertion-in-signed-response, signature-placement-anomaly, \
-                 detached-signature, nameid-comment-splitting, digest-mismatch, \
-                 c14n-inclusive-on-moved-assertion, and encrypted-assertion-present. An EMPTY list \
-                 is not a safety guarantee — Golden SAML (a forgery with a stolen but valid IdP \
-                 key) leaves no structural trace, so combine this with a trust-table JOIN on \
-                 signer_cert_sha256.",
-                "List XSW / structural red flags for a SAML message (e.g. `multiple-assertions`, \
-                 `signature-covers-other-element`, `digest-mismatch`); empty != safe.",
-                "xsw, signature wrapping, golden saml, anomalies, multiple assertions, \
-                 digest mismatch, detached signature, comment splitting, attack detection, \
-                 detection engineering",
-                "Detect",
-                "scalar/anomalies.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

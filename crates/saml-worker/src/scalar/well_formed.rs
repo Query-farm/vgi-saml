@@ -34,33 +34,39 @@ impl ScalarFunction for WellFormed {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT (saml.main.well_formed('not a saml message')).kind;".into(),
+            description: "Classify why a blob is not a usable SAML message (kind = \
+                          'not-saml' here)."
+                .into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "SAML Well-Formedness",
+            "Classify an attacker-controlled blob into a (ok, kind, detail) triage verdict \
+             without ever panicking. `kind` is one of ok, not-xml, not-saml, bad-base64, \
+             bad-deflate, dtd-present, entity-blocked, truncated, or encoding-error. The \
+             dtd-present and entity-blocked kinds double as XXE / billion-laughs signals: the \
+             hardened loader rejects any DOCTYPE/entity before it can be expanded, so their \
+             presence is reported rather than processed.",
+            "Triage a SAML blob into `(ok, kind, detail)`; `dtd-present`/`entity-blocked` flag \
+             XXE / billion-laughs attempts.",
+            "well formed, validate, xxe, billion laughs, dtd, entity, triage, bad base64, \
+             truncated, not xml, not saml, parse error",
+            "Diagnostics",
+            "scalar/well_formed.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Triage a SAML blob into STRUCT(ok BOOL, kind VARCHAR, detail VARCHAR); \
                           kind is one of ok / not-xml / not-saml / bad-base64 / bad-deflate / \
                           dtd-present / entity-blocked / truncated / encoding-error. Never panics."
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.well_formed('not a saml message')).kind;".into(),
-                description: "Classify why a blob is not a usable SAML message (kind = \
-                              'not-saml' here)."
-                    .into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "SAML Well-Formedness",
-                "Classify an attacker-controlled blob into a (ok, kind, detail) triage verdict \
-                 without ever panicking. `kind` is one of ok, not-xml, not-saml, bad-base64, \
-                 bad-deflate, dtd-present, entity-blocked, truncated, or encoding-error. The \
-                 dtd-present and entity-blocked kinds double as XXE / billion-laughs signals: the \
-                 hardened loader rejects any DOCTYPE/entity before it can be expanded, so their \
-                 presence is reported rather than processed.",
-                "Triage a SAML blob into `(ok, kind, detail)`; `dtd-present`/`entity-blocked` flag \
-                 XXE / billion-laughs attempts.",
-                "well formed, validate, xxe, billion laughs, dtd, entity, triage, bad base64, \
-                 truncated, not xml, not saml, parse error",
-                "Diagnostics",
-                "scalar/well_formed.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

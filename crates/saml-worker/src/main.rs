@@ -24,6 +24,12 @@ mod scalar;
 use vgi::catalog::{CatSchema, CatalogModel};
 use vgi::Worker;
 
+/// The worker's build version, published as the catalog's `implementation_version`
+/// (VGI328: version belongs in catalog metadata, not a parameterless SQL function).
+fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
 /// Catalog + schema metadata surfaced to DuckDB and the `vgi-lint` linter.
 fn catalog_metadata(name: &str) -> CatalogModel {
     CatalogModel {
@@ -93,13 +99,10 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  billion-laughs signals.\n\n\
                  **When to reach for it.** Use it whenever you already hold a column of raw or \
                  encoded SAML messages and need to shred, verify, or threat-hunt over them at \
-                 warehouse scale rather than one message at a time in a browser plugin. List the \
-                 `saml.main` schema to discover the individual functions and their signatures. \
-                 Pairs with [vgi-x509](https://github.com/Query-farm/vgi-x509) (cert chains / CA \
-                 trust), the sibling token decoders vgi-jwt / vgi-cbor, and vgi-pii / vgi-mask \
-                 (scrub decoded NameIDs before sharing extracts). Part of the \
-                 [Query.Farm](https://query.farm) VGI ecosystem of DuckDB workers — see the \
-                 [source repository](https://github.com/Query-farm/vgi-saml)."
+                 warehouse scale rather than one message at a time in a browser plugin. The signer \
+                 certificate SHA-256 fingerprint left-joins against your IdP cert inventory, and \
+                 decoded NameIDs can be scrubbed before sharing extracts when the source data is \
+                 sensitive."
                     .to_string(),
             ),
             (
@@ -129,12 +132,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         "I have a blob that is supposed to be SAML but looks wrong: 'not a message'. \
                          Classify why. Return one column named kind.",
                         "SELECT (saml.main.well_formed('not a message')).kind AS kind",
-                    ),
-                    (
-                        "worker_version",
-                        "What version of the saml worker is running? Return one row, one column \
-                         named version.",
-                        "SELECT saml.main.saml_version() AS version",
                     ),
                     (
                         "anomalies_multi",
@@ -284,6 +281,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
             ),
         ],
         source_url: Some("https://github.com/Query-farm/vgi-saml".to_string()),
+        implementation_version: Some(version().to_string()),
         schemas: vec![CatSchema {
             name: "main".to_string(),
             comment: Some(
@@ -320,8 +318,8 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                      XML — into typed, queryable rows, and independently re-verifies its \
                      cryptographic signature so you can trust (or distrust) what an identity \
                      provider asserted, without leaving SQL. Each capability is a separate \
-                     function that takes one content-sniffed message argument; list this schema to \
-                     discover them and their exact signatures.\n\n\
+                     function that takes one content-sniffed message argument (raw XML, base64, \
+                     base64+DEFLATE, or a URL-encoded wrapper).\n\n\
                      ## Key concepts\n\n\
                      - **Signature verification is real, not implied.** The outermost XML-DSig \
                      signature is re-checked here — SignedInfo is re-canonicalized with exclusive \
@@ -361,17 +359,17 @@ fn catalog_metadata(name: &str) -> CatalogModel {
 ]"#
                         .to_string(),
                 ),
+                // VGI515: a JSON list of {description, sql} so every schema-level
+                // example query carries a human-readable description.
                 (
                     "vgi.example_queries".to_string(),
-                    "SELECT saml.main.message_type('<samlp:Response \
-                     xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>');\n\
-                     SELECT (saml.main.well_formed('not a saml message')).kind;\n\
-                     SELECT (saml.main.decode('<saml:Assertion \
-                     xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                     <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).issuer;\n\
-                     SELECT saml.main.b64decode('PHNhbWw+');\n\
-                     SELECT len(saml.main.anomalies('<saml:Assertion \
-                     xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>'));"
+                    r#"[
+  {"description": "Identify a SAML message by its root element.", "sql": "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>') AS kind"},
+  {"description": "Triage why a blob is not a usable SAML message.", "sql": "SELECT (saml.main.well_formed('not a saml message')).kind AS kind"},
+  {"description": "Decode an assertion and read its issuer.", "sql": "SELECT (saml.main.decode('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).issuer AS issuer"},
+  {"description": "Base64-decode a SAMLResponse POST field to text.", "sql": "SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded"},
+  {"description": "Count the structural anomaly flags on a message.", "sql": "SELECT len(saml.main.anomalies('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>')) AS n"}
+]"#
                         .to_string(),
                 ),
             ],

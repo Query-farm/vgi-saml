@@ -33,35 +33,41 @@ impl ScalarFunction for AuthnFn {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT (saml.main.authn('<saml:Assertion \
+                  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AuthnStatement>\
+                  <saml:AuthnContext><saml:AuthnContextClassRef>\
+                  urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
+                  </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
+                  </saml:Assertion>')).class_ref;"
+                .into(),
+            description: "Read the AuthnContext class (e.g. detect MFA downgrade).".into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "SAML AuthnContext",
+            "Extract a SAML assertion's AuthnStatement and AuthnContext as a struct: the \
+             AuthnInstant and SessionNotOnOrAfter (`TIMESTAMPTZ`, UTC), the SessionIndex, the \
+             AuthnContextClassRef / DeclRef (the authentication method, e.g. \
+             PasswordProtectedTransport vs an MFA class — useful for spotting downgrades), and \
+             any AuthenticatingAuthority. Returns NULL when there is no AuthnStatement.",
+            "Get the AuthnStatement/AuthnContext (instant, session, auth class) as a struct.",
+            "authn, authncontext, authnstatement, session index, authninstant, class ref, \
+             authentication method, mfa downgrade, sso session",
+            "Decode",
+            "scalar/authn.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Extract the AuthnStatement + AuthnContext: STRUCT(authn_instant \
                           TIMESTAMPTZ, session_index VARCHAR, session_not_on_or_after TIMESTAMPTZ, \
                           class_ref VARCHAR, decl_ref VARCHAR, authenticating_authority VARCHAR)"
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.authn('<saml:Assertion \
-                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AuthnStatement>\
-                      <saml:AuthnContext><saml:AuthnContextClassRef>\
-                      urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
-                      </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
-                      </saml:Assertion>')).class_ref;"
-                    .into(),
-                description: "Read the AuthnContext class (e.g. detect MFA downgrade).".into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "SAML AuthnContext",
-                "Extract a SAML assertion's AuthnStatement and AuthnContext as a struct: the \
-                 AuthnInstant and SessionNotOnOrAfter (TIMESTAMPTZ, UTC), the SessionIndex, the \
-                 AuthnContextClassRef / DeclRef (the authentication method, e.g. \
-                 PasswordProtectedTransport vs an MFA class — useful for spotting downgrades), and \
-                 any AuthenticatingAuthority. Returns NULL when there is no AuthnStatement.",
-                "Get the AuthnStatement/AuthnContext (instant, session, auth class) as a struct.",
-                "authn, authncontext, authnstatement, session index, authninstant, class ref, \
-                 authentication method, mfa downgrade, sso session",
-                "Decode",
-                "scalar/authn.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

@@ -21,33 +21,39 @@ impl ScalarFunction for MessageType {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\
+                  \"urn:oasis:names:tc:SAML:2.0:protocol\"/>');"
+                .into(),
+            description: "Identify the kind of a SAML message from its root element.".into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "SAML Message Type",
+            "Return the kind of a SAML message from its root element — 'Response', \
+             'AuthnRequest', 'LogoutRequest', 'LogoutResponse', 'Assertion', 'ArtifactResolve', \
+             'ArtifactResponse', or 'unknown'. Accepts raw XML, base64, base64+DEFLATE, or \
+             URL-encoded input; returns 'unknown' for anything that does not decode to a \
+             recognized SAML element.",
+            "Discriminate a SAML message by root element, e.g. \
+             `message_type(resp)` -> 'Response'.",
+            "message type, saml kind, response, authnrequest, logoutrequest, assertion, \
+             discriminator, root element, classify saml",
+            "Decode",
+            "scalar/message_type.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Root-element discriminator: 'Response', 'AuthnRequest', \
                           'LogoutRequest', 'LogoutResponse', 'Assertion', 'ArtifactResolve', or \
                           'unknown'"
                 .into(),
             return_type: Some(DataType::Utf8),
-            examples: vec![FunctionExample {
-                sql: "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\
-                      \"urn:oasis:names:tc:SAML:2.0:protocol\"/>');"
-                    .into(),
-                description: "Identify the kind of a SAML message from its root element.".into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "SAML Message Type",
-                "Return the kind of a SAML message from its root element — 'Response', \
-                 'AuthnRequest', 'LogoutRequest', 'LogoutResponse', 'Assertion', 'ArtifactResolve', \
-                 'ArtifactResponse', or 'unknown'. Accepts raw XML, base64, base64+DEFLATE, or \
-                 URL-encoded input; returns 'unknown' for anything that does not decode to a \
-                 recognized SAML element.",
-                "Discriminate a SAML message by root element, e.g. \
-                 `message_type(resp)` -> 'Response'.",
-                "message type, saml kind, response, authnrequest, logoutrequest, assertion, \
-                 discriminator, root element, classify saml",
-                "Decode",
-                "scalar/message_type.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

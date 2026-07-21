@@ -8,7 +8,6 @@ mod fanout;
 mod message_type;
 mod signature;
 mod transport;
-mod version;
 mod well_formed;
 
 #[cfg(test)]
@@ -18,7 +17,6 @@ use vgi::Worker;
 
 /// Register every scalar function on the worker.
 pub fn register(worker: &mut Worker) {
-    worker.register_scalar(version::SamlVersion);
     worker.register_scalar(message_type::MessageType);
     worker.register_scalar(well_formed::WellFormed);
     worker.register_scalar(decode::Decode);

@@ -43,36 +43,41 @@ impl ScalarFunction for Conditions {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT (saml.main.conditions('<saml:Assertion \
+                  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
+                  <saml:Conditions NotBefore=\"2026-01-01T00:00:00Z\" \
+                  NotOnOrAfter=\"2026-01-01T01:00:00Z\"/></saml:Assertion>')).not_on_or_after;"
+                .into(),
+            description: "Read the assertion validity window for an own-skew expiry check.".into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "SAML Conditions Window",
+            "Extract a SAML assertion's Conditions as a struct: the NotBefore / NotOnOrAfter \
+             validity window (`TIMESTAMPTZ`, UTC), the AudienceRestriction audiences, the \
+             OneTimeUse flag, and any ProxyRestriction count and audiences. The worker \
+             surfaces the window but never decides 'expired' — clock-skew tolerance is the \
+             caller's policy, so compare against now() in SQL.",
+            "Get the assertion validity window + audiences as a struct; you decide expiry \
+             against `now()`.",
+            "conditions, validity window, notbefore, notonorafter, audience, audiencerestriction, \
+             onetimeuse, proxyrestriction, expiry, timestamptz",
+            "Decode",
+            "scalar/conditions.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Extract the assertion Conditions: STRUCT(not_before TIMESTAMPTZ, \
                           not_on_or_after TIMESTAMPTZ, audiences LIST<VARCHAR>, one_time_use BOOL, \
                           proxy_restriction_count UINTEGER, proxy_audiences LIST<VARCHAR>). No \
                           'expired' verdict — compare to now() yourself."
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.conditions('<saml:Assertion \
-                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
-                      <saml:Conditions NotBefore=\"2026-01-01T00:00:00Z\" \
-                      NotOnOrAfter=\"2026-01-01T01:00:00Z\"/></saml:Assertion>')).not_on_or_after;"
-                    .into(),
-                description: "Read the assertion validity window for an own-skew expiry check."
-                    .into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "SAML Conditions Window",
-                "Extract a SAML assertion's Conditions as a struct: the NotBefore / NotOnOrAfter \
-                 validity window (TIMESTAMPTZ, UTC), the AudienceRestriction audiences, the \
-                 OneTimeUse flag, and any ProxyRestriction count and audiences. The worker \
-                 surfaces the window but never decides 'expired' — clock-skew tolerance is the \
-                 caller's policy, so compare against now() in SQL.",
-                "Get the assertion validity window + audiences as a struct; you decide expiry \
-                 against `now()`.",
-                "conditions, validity window, notbefore, notonorafter, audience, audiencerestriction, \
-                 onetimeuse, proxyrestriction, expiry, timestamptz",
-                "Decode",
-                "scalar/conditions.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

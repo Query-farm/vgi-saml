@@ -29,6 +29,49 @@ pub fn keywords_json(keywords: &str) -> String {
     format!("[{}]", items.join(","))
 }
 
+/// JSON-encode a string into `out`, wrapping it in double quotes and escaping
+/// the characters JSON requires.
+fn json_string(out: &mut String, s: &str) {
+    out.push('"');
+    for ch in s.chars() {
+        match ch {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+}
+
+/// Serialize a function's usage examples into the `vgi.example_queries` tag shape
+/// (VGI515): a JSON list of `{"description": ..., "sql": ...}` objects.
+///
+/// Every function ALSO carries the same examples in [`vgi::FunctionMetadata::examples`]
+/// (the native `duckdb_functions().examples` column), but that column is a bare
+/// `VARCHAR[]` of SQL strings and drops the per-example description. The linter
+/// merges the two carriers by SQL, so emitting the identical `sql` here lets the
+/// described tag entry win — giving every example a human-readable description
+/// without duplicating the query text.
+pub fn example_queries_json(examples: &[vgi::FunctionExample]) -> String {
+    let mut out = String::from("[");
+    for (i, ex) in examples.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str("{\"description\":");
+        json_string(&mut out, &ex.description);
+        out.push_str(",\"sql\":");
+        json_string(&mut out, &ex.sql);
+        out.push('}');
+    }
+    out.push(']');
+    out
+}
+
 /// Build the `vgi.agent_test_tasks` JSON value: a fixed suite of analyst tasks
 /// that `vgi-lint simulate` runs. Each `(name, prompt, reference_sql)` triple
 /// becomes a task object; the `prompt` is shown to the simulated analyst while

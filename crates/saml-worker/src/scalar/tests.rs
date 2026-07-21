@@ -14,12 +14,6 @@ fn signed_response() -> Vec<u8> {
 }
 
 #[test]
-fn version_returns_string() {
-    let out = run_scalar_blob(&version::SamlVersion, &[Some(b"x")]).unwrap();
-    assert_eq!(out.as_string::<i32>().value(0), saml_core::version());
-}
-
-#[test]
 fn message_type_binds_utf8_and_resolves() {
     assert_eq!(bound_type(&message_type::MessageType), DataType::Utf8);
     let resp = signed_response();

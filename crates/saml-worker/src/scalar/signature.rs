@@ -75,45 +75,51 @@ impl ScalarFunction for Signature {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT (saml.main.signature('<saml:Assertion \
+                  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                  <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'))\
+                  .sig_valid;"
+                .into(),
+            description: "Check whether a SAML message's embedded signature is internally \
+                          valid (false here — the assertion is unsigned)."
+                .into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "Verify SAML Signature",
+            "Run the XML-DSig structural check on a SAML message's outermost signature using \
+             exclusive XML canonicalization, and return a struct: signed (is there a \
+             signature), digest_ok (do the per-Reference digests match the referenced nodes — \
+             i.e. does the signature cover the bytes you think it does), c14n_ok (does \
+             SignedInfo canonicalize under a recognized exclusive-C14N method), sig_valid (does \
+             SignatureValue verify against the EMBEDDED KeyInfo cert — RSA/ECDSA/EdDSA math), \
+             algo (RS256/ES256/EdDSA/…), the c14n/digest method URIs, the signer_cert (DER \
+             `BLOB`), signer_cert_sha256 (the join key to your IdP trust table), signer_subject / \
+             signer_issuer, and the references list. Crucially, sig_valid=true means only that \
+             the embedded cert signed these bytes — NOT that the key is trusted. Detecting \
+             Golden SAML (a forgery with a stolen-but-valid IdP key) is a downstream LEFT JOIN \
+             of signer_cert_sha256 against your known-good cert inventory.",
+            "Structurally verify a SAML signature (exclusive C14N + digest + embedded-cert \
+             math) → `(signed, c14n_ok, digest_ok, sig_valid, algo, signer_cert_sha256, …)`. \
+             Trust is your JOIN.",
+            "xml-dsig, signature, verify, c14n, exclusive canonicalization, digest, \
+             signer_cert_sha256, golden saml, rsa-sha256, ecdsa, eddsa, keyinfo, x509",
+            "Verify",
+            "scalar/signature.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Verify the outermost XML-DSig signature: STRUCT(signed, c14n_ok, \
                           digest_ok, sig_valid, algo, c14n_method, digest_method, signer_cert BLOB, \
                           signer_cert_sha256, signer_subject, signer_issuer, references LIST<STRUCT>). \
                           sig_valid is math against the EMBEDDED cert — trust is your JOIN."
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.signature('<saml:Assertion \
-                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                      <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'))\
-                      .sig_valid;"
-                    .into(),
-                description: "Check whether a SAML message's embedded signature is internally \
-                              valid (false here — the assertion is unsigned)."
-                    .into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "Verify SAML Signature",
-                "Run the XML-DSig structural check on a SAML message's outermost signature using \
-                 exclusive XML canonicalization, and return a struct: signed (is there a \
-                 signature), digest_ok (do the per-Reference digests match the referenced nodes — \
-                 i.e. does the signature cover the bytes you think it does), c14n_ok (does \
-                 SignedInfo canonicalize under a recognized exclusive-C14N method), sig_valid (does \
-                 SignatureValue verify against the EMBEDDED KeyInfo cert — RSA/ECDSA/EdDSA math), \
-                 algo (RS256/ES256/EdDSA/…), the c14n/digest method URIs, the signer_cert (DER \
-                 BLOB), signer_cert_sha256 (the join key to your IdP trust table), signer_subject / \
-                 signer_issuer, and the references list. Crucially, sig_valid=true means only that \
-                 the embedded cert signed these bytes — NOT that the key is trusted. Detecting \
-                 Golden SAML (a forgery with a stolen-but-valid IdP key) is a downstream LEFT JOIN \
-                 of signer_cert_sha256 against your known-good cert inventory.",
-                "Structurally verify a SAML signature (exclusive C14N + digest + embedded-cert \
-                 math) → `(signed, c14n_ok, digest_ok, sig_valid, algo, signer_cert_sha256, …)`. \
-                 Trust is your JOIN.",
-                "xml-dsig, signature, verify, c14n, exclusive canonicalization, digest, \
-                 signer_cert_sha256, golden saml, rsa-sha256, ecdsa, eddsa, keyinfo, x509",
-                "Verify",
-                "scalar/signature.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }

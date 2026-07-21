@@ -57,42 +57,48 @@ impl ScalarFunction for Decode {
     }
 
     fn metadata(&self) -> FunctionMetadata {
+        let examples = vec![FunctionExample {
+            sql: "SELECT (saml.main.decode('<saml:Assertion \
+                  xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
+                  <saml:Issuer>https://idp.example.com</saml:Issuer><saml:Subject>\
+                  <saml:NameID>alice@example.com</saml:NameID></saml:Subject>\
+                  </saml:Assertion>')).subject;"
+                .into(),
+            description: "Decode a SAML assertion to its subject + core fields.".into(),
+            expected_output: None,
+        }];
+        let mut tags = crate::meta::object_tags(
+            "Decode SAML Message",
+            "Decode a SAML 2.0 Response or Assertion to a struct of its core fields — \
+             response_id / assertion_id, issuer, subject (+ NameID format and SP qualifier), \
+             SubjectConfirmation recipient / in_response_to, the Conditions NotBefore / \
+             NotOnOrAfter window, audience(s), AuthnInstant / SessionIndex / AuthnContext class, \
+             Status, Destination, IssueInstant, Version, the assertion/encrypted counts, and \
+             whether a top-level Signature is present. The input is content-sniffed: it accepts \
+             raw XML, base64 (HTTP-POST binding), base64+raw-DEFLATE (HTTP-Redirect binding), \
+             or a URL-encoded wrapper. It never errors on malformed input — a bad blob yields a \
+             struct with null fields and signed=false (call well_formed for the reason). \
+             Timestamps are `TIMESTAMPTZ` (UTC); the worker surfaces the window but does not \
+             decide 'expired'.",
+            "Decode a SAML Response/Assertion to a struct of subject, issuer, audience, the \
+             validity window, authn context, status, ids and counts; null fields on bad input.",
+            "decode saml, samlresponse, assertion, subject, issuer, audience, nameid, \
+             conditions, authn context, status, base64, deflate, redirect binding, post binding",
+            "Decode",
+            "scalar/decode.rs",
+        );
+        tags.push((
+            "vgi.example_queries".into(),
+            crate::meta::example_queries_json(&examples),
+        ));
         FunctionMetadata {
             description: "Decode a SAML message (raw XML / base64 / base64+DEFLATE / URL-encoded) \
                           to a STRUCT of core fields: subject, issuer, audience, conditions window, \
                           authn_context, status, ids, counts, and signed. Never errors on bad \
                           input — returns null fields + signed=false (see well_formed)."
                 .into(),
-            examples: vec![FunctionExample {
-                sql: "SELECT (saml.main.decode('<saml:Assertion \
-                      xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                      <saml:Issuer>https://idp.example.com</saml:Issuer><saml:Subject>\
-                      <saml:NameID>alice@example.com</saml:NameID></saml:Subject>\
-                      </saml:Assertion>')).subject;"
-                    .into(),
-                description: "Decode a SAML assertion to its subject + core fields.".into(),
-                expected_output: None,
-            }],
-            tags: crate::meta::object_tags(
-                "Decode SAML Message",
-                "Decode a SAML 2.0 Response or Assertion to a struct of its core fields — \
-                 response_id / assertion_id, issuer, subject (+ NameID format and SP qualifier), \
-                 SubjectConfirmation recipient / in_response_to, the Conditions NotBefore / \
-                 NotOnOrAfter window, audience(s), AuthnInstant / SessionIndex / AuthnContext class, \
-                 Status, Destination, IssueInstant, Version, the assertion/encrypted counts, and \
-                 whether a top-level Signature is present. The input is content-sniffed: it accepts \
-                 raw XML, base64 (HTTP-POST binding), base64+raw-DEFLATE (HTTP-Redirect binding), \
-                 or a URL-encoded wrapper. It never errors on malformed input — a bad blob yields a \
-                 struct with null fields and signed=false (call well_formed for the reason). \
-                 Timestamps are TIMESTAMPTZ (UTC); the worker surfaces the window but does not \
-                 decide 'expired'.",
-                "Decode a SAML Response/Assertion to a struct of subject, issuer, audience, the \
-                 validity window, authn context, status, ids and counts; null fields on bad input.",
-                "decode saml, samlresponse, assertion, subject, issuer, audience, nameid, \
-                 conditions, authn context, status, base64, deflate, redirect binding, post binding",
-                "Decode",
-                "scalar/decode.rs",
-            ),
+            examples,
+            tags,
             ..Default::default()
         }
     }
