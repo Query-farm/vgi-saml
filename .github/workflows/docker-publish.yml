@@ -26,7 +26,13 @@ concurrency:
 jobs:
   # Gate every image on the full unit + vgi-extension integration suite, so a
   # broken worker is never imaged. (ci.yml declares `on: workflow_call:`.)
+  # ci.yml's `audit` job posts a check-run (checks: write); a reusable workflow
+  # cannot request a scope the caller did not delegate, so we must grant it here
+  # or the whole run fails to start (startup_failure).
   ci:
+    permissions:
+      contents: read
+      checks: write
     uses: ./.github/workflows/ci.yml
 
   publish:
