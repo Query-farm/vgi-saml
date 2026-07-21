@@ -27,7 +27,13 @@ permissions:
 
 jobs:
   # Gate the release on the same unit + SQLLogic e2e suite as push/PR.
+  # The called ci.yml has an `audit` job that posts a check-run (checks: write);
+  # a reusable workflow cannot request a scope the caller did not delegate, so we
+  # must grant it here or the whole release run fails to start (startup_failure).
   ci:
+    permissions:
+      contents: read
+      checks: write
     uses: ./.github/workflows/ci.yml
 
   release:
