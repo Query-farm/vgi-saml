@@ -4,6 +4,23 @@ All notable changes to `vgi-saml` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-07-21
+
+### Changed
+
+- Metadata quality driven to `vgi-lint` 100/100 (0 findings at `--fail-on info`):
+  every function now carries a described `vgi.example_queries` list, the worker
+  ships a verified `vgi.executable_examples` set (with `expected_result`),
+  DuckDB type names in the LLM docs are code-formatted, and cross-worker /
+  schema-listing boilerplate was removed from the catalog and schema docs.
+- The worker build version is now published as the catalog
+  `implementation_version` (visible via `duckdb_databases()`).
+
+### Removed
+
+- **Breaking:** the parameterless `saml_version()` scalar. Read the running
+  build from the catalog's `implementation_version` instead.
+
 ## [0.1.0] - 2026-06-29
 
 Initial release.
