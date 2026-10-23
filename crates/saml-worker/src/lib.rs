@@ -118,8 +118,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         "What kind of SAML message is this XML: \
                          '<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>'? \
                          Return one column named kind.",
-                        "SELECT saml.main.message_type('<samlp:Response \
-                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>') AS kind",
                     ),
                     (
                         "decode_issuer",
@@ -127,16 +125,11 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          '<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" \
                          ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer>\
                          </saml:Assertion>'.",
-                        "SELECT (saml.main.decode('<saml:Assertion \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'))\
-                         .issuer AS issuer",
                     ),
                     (
                         "triage_kind",
                         "I have a blob that is supposed to be SAML but looks wrong: 'not a message'. \
                          Classify why. Return one column named kind.",
-                        "SELECT (saml.main.well_formed('not a message')).kind AS kind",
                     ),
                     (
                         "anomalies_multi",
@@ -149,13 +142,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
                          <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
                          </samlp:Response>'.",
-                        "SELECT list_contains(saml.main.anomalies('<samlp:Response \
-                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\">\
-                         <saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com\
-                         </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
-                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
-                         </samlp:Response>'), 'multiple-assertions') AS has_multi",
                     ),
                     (
                         "count_assertions",
@@ -167,13 +153,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
                          <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
                          </samlp:Response>'.",
-                        "SELECT len(saml.main.assertions('<samlp:Response \
-                         xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\">\
-                         <saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com\
-                         </saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\">\
-                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>\
-                         </samlp:Response>')) AS n",
                     ),
                     (
                         "count_attribute_values",
@@ -184,12 +163,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          <saml:AttributeValue>admin</saml:AttributeValue>\
                          <saml:AttributeValue>user</saml:AttributeValue></saml:Attribute>\
                          </saml:AttributeStatement></saml:Assertion>'.",
-                        "SELECT len(saml.main.attributes('<saml:Assertion \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
-                         <saml:AttributeStatement><saml:Attribute Name=\"role\">\
-                         <saml:AttributeValue>admin</saml:AttributeValue>\
-                         <saml:AttributeValue>user</saml:AttributeValue></saml:Attribute>\
-                         </saml:AttributeStatement></saml:Assertion>')) AS n",
                     ),
                     (
                         "authn_class",
@@ -201,19 +174,11 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
                          </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
                          </saml:Assertion>'.",
-                        "SELECT (saml.main.authn('<saml:Assertion \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                         <saml:AuthnStatement AuthnInstant=\"2024-01-01T00:00:00Z\">\
-                         <saml:AuthnContext><saml:AuthnContextClassRef>\
-                         urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport\
-                         </saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement>\
-                         </saml:Assertion>')).class_ref AS class_ref",
                     ),
                     (
                         "b64decode_text",
                         "Base64-decode the string 'PHNhbWw+' and return its UTF-8 text as one \
                          column named decoded.",
-                        "SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded",
                     ),
                     (
                         "conditions_window",
@@ -224,20 +189,12 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          NotOnOrAfter=\"2035-06-01T00:00:00Z\"><saml:AudienceRestriction>\
                          <saml:Audience>https://sp.example.com</saml:Audience>\
                          </saml:AudienceRestriction></saml:Conditions></saml:Assertion>'.",
-                        "SELECT ((saml.main.conditions('<saml:Assertion \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                         <saml:Conditions NotBefore=\"2020-01-01T00:00:00Z\" \
-                         NotOnOrAfter=\"2035-06-01T00:00:00Z\"><saml:AudienceRestriction>\
-                         <saml:Audience>https://sp.example.com</saml:Audience>\
-                         </saml:AudienceRestriction></saml:Conditions></saml:Assertion>'))\
-                         .not_on_or_after > TIMESTAMPTZ '2030-01-01') AS expires_after_2030",
                     ),
                     (
                         "inflate_redirect",
                         "Base64-decode then raw-DEFLATE-inflate this HTTP-Redirect-binding \
                          SAMLRequest and return its XML text as one column named xml. Value: \
                          'sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA='.",
-                        "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA=')) AS xml",
                     ),
                     (
                         "signature_valid",
@@ -245,10 +202,6 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          Return one boolean column named sig_valid. XML: '<saml:Assertion \
                          xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
                          <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'.",
-                        "SELECT (saml.main.signature('<saml:Assertion \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'))\
-                         .sig_valid AS sig_valid",
                     ),
                     (
                         "count_signatures",
@@ -256,17 +209,12 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          column named n. XML: '<saml:Assertion \
                          xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
                          <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>'.",
-                        "SELECT len(saml.main.signatures('<saml:Assertion \
-                         xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\">\
-                         <saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')) \
-                         AS n",
                     ),
                     (
                         "unwrap_transport",
                         "Recover the SAML XML from this URL-encoded, base64-wrapped transport \
                          parameter and return it as one column named xml. Value: \
                          'PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D'.",
-                        "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D') AS xml",
                     ),
                 ]),
             ),
@@ -289,6 +237,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         implementation_version: Some(version().to_string()),
         schemas: vec![CatSchema {
             name: "main".to_string(),
+            path: Vec::new(),
             comment: Some(
                 "SAML decode, signature-verification, and XSW / Golden-SAML detection functions."
                     .to_string(),

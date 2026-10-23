@@ -14,7 +14,7 @@ description = "Pure-compute SAML 2.0 decode + XML-DSig / exclusive-C14N verifica
 # node count — exactly the lockdown a security worker over hostile input needs.
 roxmltree = "0.20"
 # Base64 (standard + URL-safe) for the POST/redirect bindings.
-base64 = "0.22"
+base64 = "0.23"
 # Raw DEFLATE inflate (redirect binding); pure-Rust miniz_oxide backend.
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 # URL-decode for `unwrap`.

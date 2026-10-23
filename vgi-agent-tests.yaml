@@ -1,0 +1,34 @@
+# Private graders for the agent-suitability suite (`vgi-lint simulate`).
+#
+# The prompts are published in the catalog's vgi.agent_test_tasks tag
+# (crates/saml-worker/src/lib.rs); the canonical answers live here, keyed by
+# task name, so the agent being graded never sees them (VGI416). vgi-lint
+# discovers this file next to vgi-lint.toml.
+
+tasks:
+  - name: message_kind
+    reference_sql: "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>') AS kind"
+  - name: decode_issuer
+    reference_sql: "SELECT (saml.main.decode('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).issuer AS issuer"
+  - name: triage_kind
+    reference_sql: "SELECT (saml.main.well_formed('not a message')).kind AS kind"
+  - name: anomalies_multi
+    reference_sql: "SELECT list_contains(saml.main.anomalies('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\"><saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion></samlp:Response>'), 'multiple-assertions') AS has_multi"
+  - name: count_assertions
+    reference_sql: "SELECT len(saml.main.assertions('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_r\"><saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion></samlp:Response>')) AS n"
+  - name: count_attribute_values
+    reference_sql: "SELECT len(saml.main.attributes('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AttributeStatement><saml:Attribute Name=\"role\"><saml:AttributeValue>admin</saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS n"
+  - name: authn_class
+    reference_sql: "SELECT (saml.main.authn('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:AuthnStatement AuthnInstant=\"2024-01-01T00:00:00Z\"><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement></saml:Assertion>')).class_ref AS class_ref"
+  - name: b64decode_text
+    reference_sql: "SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded"
+  - name: conditions_window
+    reference_sql: "SELECT ((saml.main.conditions('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Conditions NotBefore=\"2020-01-01T00:00:00Z\" NotOnOrAfter=\"2035-06-01T00:00:00Z\"><saml:AudienceRestriction><saml:Audience>https://sp.example.com</saml:Audience></saml:AudienceRestriction></saml:Conditions></saml:Assertion>')).not_on_or_after > TIMESTAMPTZ '2030-01-01') AS expires_after_2030"
+  - name: inflate_redirect
+    reference_sql: "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA=')) AS xml"
+  - name: signature_valid
+    reference_sql: "SELECT (saml.main.signature('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).sig_valid AS sig_valid"
+  - name: count_signatures
+    reference_sql: "SELECT len(saml.main.signatures('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')) AS n"
+  - name: unwrap_transport
+    reference_sql: "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D') AS xml"
