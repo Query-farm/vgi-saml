@@ -44,7 +44,7 @@ cargo fmt --all -- --check
 cargo test --workspace --all-features        # unit + c14n oracle + golden + zero-panic proptest
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --workspace
 ./run_tests.sh                               # haybarn SQLLogic E2E
-uvx --from vgi-lint-check vgi-lint lint "$PWD/target/release/saml-worker" --execute --ai --ai-concurrency 1 --fail-on info
+uvx --prerelease allow --from 'vgi-lint-check>=2.0.1' vgi-lint lint "$PWD/target/release/saml-worker" --execute --ai --ai-concurrency 1 --fail-on info
 ```
 
 ## Gotchas

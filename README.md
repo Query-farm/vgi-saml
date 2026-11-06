@@ -31,6 +31,9 @@ Rust**.
 
 ## Install & attach
 
+The worker speaks VGI protocol vgi.v3 (3.1), so it requires haybarn 2.0 and its
+community `vgi` extension; haybarn 1.5 cannot attach it.
+
 ```sql
 INSTALL vgi FROM community;
 LOAD vgi;
