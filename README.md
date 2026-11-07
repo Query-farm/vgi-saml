@@ -29,19 +29,42 @@ Rust**.
 > Golden SAML (a forgery with a stolen-but-valid IdP key) is a downstream
 > `LEFT JOIN` of `signer_cert_sha256` against your known-good cert inventory.
 
-## Install & attach
+## Quick start
 
-The worker speaks VGI protocol vgi.v3 (3.1), so it requires haybarn 2.0 and its
-community `vgi` extension; haybarn 1.5 cannot attach it.
+Every [GitHub release](https://github.com/Query-farm/vgi-saml/releases) ships a prebuilt worker binary. The `vgi` extension downloads the one for your platform, checks its SHA-256 and caches it, so there is nothing to install besides DuckDB:
 
 ```sql
 INSTALL vgi FROM community;
 LOAD vgi;
-ATTACH 'vgi-saml' AS saml (TYPE vgi, LOCATION '/path/to/saml-worker');  -- spawns the worker binary
+
+ATTACH 'saml' AS saml (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-saml@v0.2.1');
+
+-- Identify a SAML message by its root element.
+SELECT saml.main.message_type('<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"/>') AS kind;
+
+-- Triage why a blob is not a usable SAML message.
+SELECT (saml.main.well_formed('not a saml message')).kind AS kind;
 ```
 
-Everything lives under the catalog `saml`, schema `main` (e.g.
-`saml.main.decode(...)`).
+The worker speaks VGI protocol vgi.v3 (3.1), so it requires haybarn 2.0 and its
+community `vgi` extension; haybarn 1.5 cannot attach it. Everything lives under
+the catalog `saml`, schema `main` (e.g. `saml.main.decode(...)`).
+
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.2.1` to move to a newer release.
+
+### Other ways to run it
+
+- **Docker** (the image bundles the worker; needs a container runtime):
+
+  ```sql
+  ATTACH 'saml' AS saml (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-saml:0.2.1');
+  ```
+
+- **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-saml/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
+
+### Build from source
+
+To build the worker yourself, see [Building & testing](#building--testing).
 
 ## SQL examples
 
