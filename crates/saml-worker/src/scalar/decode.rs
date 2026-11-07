@@ -99,6 +99,7 @@ impl ScalarFunction for Decode {
                 .into(),
             examples,
             tags,
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

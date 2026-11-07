@@ -67,6 +67,7 @@ impl ScalarFunction for WellFormed {
                 .into(),
             examples,
             tags,
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

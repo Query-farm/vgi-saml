@@ -78,6 +78,7 @@ impl ScalarFunction for Conditions {
                 .into(),
             examples,
             tags,
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

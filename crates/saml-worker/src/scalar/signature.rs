@@ -120,6 +120,7 @@ impl ScalarFunction for Signature {
                 .into(),
             examples,
             tags,
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }

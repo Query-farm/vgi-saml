@@ -68,6 +68,7 @@ impl ScalarFunction for AuthnFn {
                 .into(),
             examples,
             tags,
+            return_type: Some(DataType::Struct(fields())),
             ..Default::default()
         }
     }
