@@ -46,7 +46,7 @@ SELECT saml.main.message_type('<samlp:Response xmlns:samlp="urn:oasis:names:tc:S
 SELECT (saml.main.well_formed('not a saml message')).kind AS kind;
 ```
 
-The worker speaks VGI protocol vgi.v3 (3.1), so it requires haybarn 2.0 and its
+The worker speaks VGI protocol vgi.v3 (3.2), so it requires haybarn 2.0 and its
 community `vgi` extension; haybarn 1.5 cannot attach it. Everything lives under
 the catalog `saml`, schema `main` (e.g. `saml.main.decode(...)`).
 
