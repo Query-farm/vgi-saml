@@ -37,7 +37,7 @@ Every [GitHub release](https://github.com/Query-farm/vgi-saml/releases) ships a 
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'saml' AS saml (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-saml@v0.2.1');
+ATTACH 'saml' AS saml (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-saml@v0.3.0');
 
 -- Identify a SAML message by its root element.
 SELECT saml.main.message_type('<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"/>') AS kind;
@@ -50,14 +50,14 @@ The worker speaks VGI protocol vgi.v3 (3.2), so it requires haybarn 2.0 and its
 community `vgi` extension; haybarn 1.5 cannot attach it. Everything lives under
 the catalog `saml`, schema `main` (e.g. `saml.main.decode(...)`).
 
-Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.2.1` to move to a newer release.
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.3.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker; needs a container runtime):
 
   ```sql
-  ATTACH 'saml' AS saml (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-saml:0.2.1');
+  ATTACH 'saml' AS saml (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-saml:0.3.0');
   ```
 
 - **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-saml/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
