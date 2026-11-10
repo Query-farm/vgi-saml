@@ -47,7 +47,13 @@ fn catalog_metadata(name: &str) -> CatalogModel {
         tags: vec![
             (
                 "vgi.title".to_string(),
-                "SAML Decode, Signature Verification & Attack Detection".to_string(),
+                "SAML Forensics".to_string(),
+            ),
+            (
+                "vgi.subtitle".to_string(),
+                "Decode SAML 2.0 messages, verify their XML signatures, and flag XSW and \
+                 Golden-SAML attacks in bulk."
+                    .to_string(),
             ),
             (
                 "vgi.keywords".to_string(),
@@ -243,7 +249,7 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                     .to_string(),
             ),
             tags: vec![
-                ("vgi.title".to_string(), "SAML — main".to_string()),
+                ("vgi.title".to_string(), "SAML functions".to_string()),
                 (
                     "vgi.keywords".to_string(),
                     crate::meta::keywords_json(

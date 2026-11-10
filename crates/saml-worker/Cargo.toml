@@ -24,10 +24,13 @@ saml-core.workspace = true
 log = "0.4"
 
 # --- Native ---------------------------------------------------------------
-# The SDK's real default features (sqlite + HTTP transport) — unchanged from
-# before the wasm split. env_logger drives the native binary's stderr logging.
+# HTTP transport only. The SDK's `sqlite` feature (a SQLite-backed shared-state
+# store) is deliberately off: this worker keeps no cross-call state that needs a
+# database, the SDK falls back to its filesystem store, and it keeps the bundled
+# C SQLite (libsqlite3-sys, RUSTSEC-2026-0459 on <0.39) out of the binary.
+# env_logger drives the native binary's stderr logging.
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-vgi = { workspace = true, features = ["sqlite", "transport-http"] }
+vgi = { workspace = true, features = ["transport-http"] }
 vgi-rpc = { workspace = true, features = ["http"] }
 env_logger = "0.11"
 
