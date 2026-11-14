@@ -216,3 +216,7 @@ cargo clippy --all-targets -- -D warnings
 ## License
 
 MIT © Query Farm LLC — https://query.farm
+
+## Notebooks
+
+[Executed SQL evidence audit](notebooks/README.md): distinguish signature mathematics, reference digests, assertion coverage and separately supplied signer inventory using synthetic fixtures.
