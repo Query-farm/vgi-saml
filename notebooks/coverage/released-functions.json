@@ -1,0 +1,497 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='saml'",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "saml",
+      "22592",
+      "main",
+      "unwrap",
+      null,
+      "scalar",
+      "Unwrap a redirect/POST-binding parameter (URL-decode + base64 + DEFLATE sniff) to its SAML XML text; NULL on failure",
+      null,
+      {
+        "vgi.category": "Transport",
+        "vgi.doc_llm": "Unwrap a SAML transport parameter to its XML text in one call: URL-decode the value, base64-decode it, and content-sniff whether the result is XML or DEFLATE-compressed XML (inflating if so). Handles both the HTTP-Redirect (URL-encoded base64 of raw DEFLATE) and HTTP-POST (base64) shapes. Returns NULL when the value does not resolve to XML.",
+        "vgi.doc_md": "URL-decode + base64 + inflate-sniff a redirect/POST parameter to its SAML XML; NULL on failure.",
+        "vgi.example_queries": "[{\"description\":\"Recover the XML from a URL-encoded, base64-wrapped transport parameter.\",\"sql\":\"SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D');\"}]",
+        "vgi.keywords": "[\"unwrap\",\"url decode\",\"percent decode\",\"redirect binding\",\"post binding\",\"base64\",\"deflate\",\"saml transport\",\"query parameter\"]",
+        "vgi.title": "Unwrap SAML Transport"
+      },
+      "VARCHAR",
+      [
+        "param"
+      ],
+      [
+        "VARCHAR"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22607,
+      [
+        "SELECT saml.main.unwrap('PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "signatures",
+      null,
+      "scalar",
+      "Return every signature in a SAML message as a LIST<STRUCT> (idx, scope, references_id, signed_element, c14n_ok, digest_ok, sig_valid, signer_cert_sha256); UNNEST for the multi-sig view",
+      null,
+      {
+        "vgi.category": "Verify",
+        "vgi.doc_llm": "Return every ds:Signature in a SAML message as a `LIST(STRUCT(idx, scope, references_id, signed_element, c14n_ok, digest_ok, sig_valid, signer_cert_sha256))`, one struct per signature. UNNEST it over a column for the multi-signature view that makes XML Signature Wrapping visible \u2014 a response with two assertions where only one is signed, or a signature whose signed_element is not the element a consumer reads, jumps out. Empty list for an unsigned message; NULL for a NULL input.",
+        "vgi.doc_md": "Return every signature as a `LIST<STRUCT(idx, scope, references_id, signed_element, c14n_ok, digest_ok, sig_valid, signer_cert_sha256)>`; UNNEST for the XSW multi-sig view.",
+        "vgi.example_queries": "[{\"description\":\"Enumerate every signature and its scope to spot wrapping.\",\"sql\":\"SELECT s.idx, s.scope, s.sig_valid FROM UNNEST(saml.main.signatures('<samlp:Response xmlns:samlp=\\\"urn:oasis:names:tc:SAML:2.0:protocol\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\" xmlns:ds=\\\"http://www.w3.org/2000/09/xmldsig#\\\"><ds:Signature><ds:SignedInfo><ds:Reference URI=\\\"#_a1\\\"/></ds:SignedInfo></ds:Signature><saml:Assertion ID=\\\"_a1\\\"/></samlp:Response>')) AS _(s) ORDER BY s.idx;\"}]",
+        "vgi.keywords": "[\"saml signatures\",\"multi signature\",\"xsw\",\"signature wrapping\",\"scope\",\"signed element\",\"digest_ok\",\"sig_valid\",\"signer_cert_sha256\",\"unnest\",\"list of struct\"]",
+        "vgi.title": "All SAML Signatures"
+      },
+      "STRUCT(idx UINTEGER, \"scope\" VARCHAR, references_id VARCHAR, signed_element VARCHAR, c14n_ok BOOLEAN, digest_ok BOOLEAN, sig_valid BOOLEAN, signer_cert_sha256 VARCHAR)[]",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22606,
+      [
+        "SELECT s.idx, s.scope, s.sig_valid FROM UNNEST(saml.main.signatures('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:Signature><ds:SignedInfo><ds:Reference URI=\"#_a1\"/></ds:SignedInfo></ds:Signature><saml:Assertion ID=\"_a1\"/></samlp:Response>')) AS _(s) ORDER BY s.idx;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "decode",
+      null,
+      "scalar",
+      "Decode a SAML message (raw XML / base64 / base64+DEFLATE / URL-encoded) to a STRUCT of core fields: subject, issuer, audience, conditions window, authn_context, status, ids, counts, and signed. Never errors on bad input \u2014 returns null fields + signed=false (see well_formed).",
+      null,
+      {
+        "vgi.category": "Decode",
+        "vgi.doc_llm": "Decode a SAML 2.0 Response or Assertion to a struct of its core fields \u2014 response_id / assertion_id, issuer, subject (+ NameID format and SP qualifier), SubjectConfirmation recipient / in_response_to, the Conditions NotBefore / NotOnOrAfter window, audience(s), AuthnInstant / SessionIndex / AuthnContext class, Status, Destination, IssueInstant, Version, the assertion/encrypted counts, and whether a top-level Signature is present. The input is content-sniffed: it accepts raw XML, base64 (HTTP-POST binding), base64+raw-DEFLATE (HTTP-Redirect binding), or a URL-encoded wrapper. It never errors on malformed input \u2014 a bad blob yields a struct with null fields and signed=false (call well_formed for the reason). Timestamps are `TIMESTAMPTZ` (UTC); the worker surfaces the window but does not decide 'expired'.",
+        "vgi.doc_md": "Decode a SAML Response/Assertion to a struct of subject, issuer, audience, the validity window, authn context, status, ids and counts; null fields on bad input.",
+        "vgi.example_queries": "[{\"description\":\"Decode a SAML assertion to its subject + core fields.\",\"sql\":\"SELECT (saml.main.decode('<saml:Assertion xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\" ID=\\\"_a\\\"><saml:Issuer>https://idp.example.com</saml:Issuer><saml:Subject><saml:NameID>alice@example.com</saml:NameID></saml:Subject></saml:Assertion>')).subject;\"}]",
+        "vgi.keywords": "[\"decode saml\",\"samlresponse\",\"assertion\",\"subject\",\"issuer\",\"audience\",\"nameid\",\"conditions\",\"authn context\",\"status\",\"base64\",\"deflate\",\"redirect binding\",\"post binding\"]",
+        "vgi.title": "Decode SAML Message"
+      },
+      "STRUCT(message_type VARCHAR, response_id VARCHAR, assertion_id VARCHAR, issuer VARCHAR, subject VARCHAR, subject_format VARCHAR, subject_sp_qualifier VARCHAR, confirmation_method VARCHAR, recipient VARCHAR, in_response_to VARCHAR, subject_not_on_or_after TIMESTAMP WITH TIME ZONE, not_before TIMESTAMP WITH TIME ZONE, not_on_or_after TIMESTAMP WITH TIME ZONE, audience VARCHAR, audiences VARCHAR[], authn_instant TIMESTAMP WITH TIME ZONE, session_index VARCHAR, authn_context VARCHAR, status VARCHAR, destination VARCHAR, issue_instant TIMESTAMP WITH TIME ZONE, \"version\" VARCHAR, assertion_count UINTEGER, encrypted_count UINTEGER, signed BOOLEAN)",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22602,
+      [
+        "SELECT (saml.main.decode('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer><saml:Subject><saml:NameID>alice@example.com</saml:NameID></saml:Subject></saml:Assertion>')).subject;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "message_type",
+      null,
+      "scalar",
+      "Root-element discriminator: 'Response', 'AuthnRequest', 'LogoutRequest', 'LogoutResponse', 'Assertion', 'ArtifactResolve', or 'unknown'",
+      null,
+      {
+        "vgi.category": "Decode",
+        "vgi.doc_llm": "Return the kind of a SAML message from its root element \u2014 'Response', 'AuthnRequest', 'LogoutRequest', 'LogoutResponse', 'Assertion', 'ArtifactResolve', 'ArtifactResponse', or 'unknown'. Accepts raw XML, base64, base64+DEFLATE, or URL-encoded input; returns 'unknown' for anything that does not decode to a recognized SAML element.",
+        "vgi.doc_md": "Discriminate a SAML message by root element, e.g. `message_type(resp)` -> 'Response'.",
+        "vgi.example_queries": "[{\"description\":\"Identify the kind of a SAML message from its root element.\",\"sql\":\"SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\\\"urn:oasis:names:tc:SAML:2.0:protocol\\\"/>');\"}]",
+        "vgi.keywords": "[\"message type\",\"saml kind\",\"response\",\"authnrequest\",\"logoutrequest\",\"assertion\",\"discriminator\",\"root element\",\"classify saml\"]",
+        "vgi.title": "SAML Message Type"
+      },
+      "VARCHAR",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22604,
+      [
+        "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "signature",
+      null,
+      "scalar",
+      "Verify the outermost XML-DSig signature: STRUCT(signed, c14n_ok, digest_ok, sig_valid, algo, c14n_method, digest_method, signer_cert BLOB, signer_cert_sha256, signer_subject, signer_issuer, references LIST<STRUCT>). sig_valid is math against the EMBEDDED cert \u2014 trust is your JOIN.",
+      null,
+      {
+        "vgi.category": "Verify",
+        "vgi.doc_llm": "Run the XML-DSig structural check on a SAML message's outermost signature using exclusive XML canonicalization, and return a struct: signed (is there a signature), digest_ok (do the per-Reference digests match the referenced nodes \u2014 i.e. does the signature cover the bytes you think it does), c14n_ok (does SignedInfo canonicalize under a recognized exclusive-C14N method), sig_valid (does SignatureValue verify against the EMBEDDED KeyInfo cert \u2014 RSA/ECDSA/EdDSA math), algo (RS256/ES256/EdDSA/\u2026), the c14n/digest method URIs, the signer_cert (DER `BLOB`), signer_cert_sha256 (the join key to your IdP trust table), signer_subject / signer_issuer, and the references list. Crucially, sig_valid=true means only that the embedded cert signed these bytes \u2014 NOT that the key is trusted. Detecting Golden SAML (a forgery with a stolen-but-valid IdP key) is a downstream LEFT JOIN of signer_cert_sha256 against your known-good cert inventory.",
+        "vgi.doc_md": "Structurally verify a SAML signature (exclusive C14N + digest + embedded-cert math) \u2192 `(signed, c14n_ok, digest_ok, sig_valid, algo, signer_cert_sha256, \u2026)`. Trust is your JOIN.",
+        "vgi.example_queries": "[{\"description\":\"Check whether a SAML message's embedded signature is internally valid (false here \u2014 the assertion is unsigned).\",\"sql\":\"SELECT (saml.main.signature('<saml:Assertion xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\" ID=\\\"_a\\\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).sig_valid;\"}]",
+        "vgi.keywords": "[\"xml-dsig\",\"signature\",\"verify\",\"c14n\",\"exclusive canonicalization\",\"digest\",\"signer_cert_sha256\",\"golden saml\",\"rsa-sha256\",\"ecdsa\",\"eddsa\",\"keyinfo\",\"x509\"]",
+        "vgi.title": "Verify SAML Signature"
+      },
+      "STRUCT(signed BOOLEAN, c14n_ok BOOLEAN, digest_ok BOOLEAN, sig_valid BOOLEAN, algo VARCHAR, c14n_method VARCHAR, digest_method VARCHAR, signer_cert BLOB, signer_cert_sha256 VARCHAR, signer_subject VARCHAR, signer_issuer VARCHAR, \"references\" STRUCT(uri VARCHAR, digest_method VARCHAR, digest_ok BOOLEAN, resolved_element VARCHAR)[])",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22605,
+      [
+        "SELECT (saml.main.signature('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).sig_valid;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "conditions",
+      null,
+      "scalar",
+      "Extract the assertion Conditions: STRUCT(not_before TIMESTAMPTZ, not_on_or_after TIMESTAMPTZ, audiences LIST<VARCHAR>, one_time_use BOOL, proxy_restriction_count UINTEGER, proxy_audiences LIST<VARCHAR>). No 'expired' verdict \u2014 compare to now() yourself.",
+      null,
+      {
+        "vgi.category": "Decode",
+        "vgi.doc_llm": "Extract a SAML assertion's Conditions as a struct: the NotBefore / NotOnOrAfter validity window (`TIMESTAMPTZ`, UTC), the AudienceRestriction audiences, the OneTimeUse flag, and any ProxyRestriction count and audiences. The worker surfaces the window but never decides 'expired' \u2014 clock-skew tolerance is the caller's policy, so compare against now() in SQL.",
+        "vgi.doc_md": "Get the assertion validity window + audiences as a struct; you decide expiry against `now()`.",
+        "vgi.example_queries": "[{\"description\":\"Read the assertion validity window for an own-skew expiry check.\",\"sql\":\"SELECT (saml.main.conditions('<saml:Assertion xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\"><saml:Conditions NotBefore=\\\"2026-01-01T00:00:00Z\\\" NotOnOrAfter=\\\"2026-01-01T01:00:00Z\\\"/></saml:Assertion>')).not_on_or_after;\"}]",
+        "vgi.keywords": "[\"conditions\",\"validity window\",\"notbefore\",\"notonorafter\",\"audience\",\"audiencerestriction\",\"onetimeuse\",\"proxyrestriction\",\"expiry\",\"timestamptz\"]",
+        "vgi.title": "SAML Conditions Window"
+      },
+      "STRUCT(not_before TIMESTAMP WITH TIME ZONE, not_on_or_after TIMESTAMP WITH TIME ZONE, audiences VARCHAR[], one_time_use BOOLEAN, proxy_restriction_count UINTEGER, proxy_audiences VARCHAR[])",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22601,
+      [
+        "SELECT (saml.main.conditions('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:Conditions NotBefore=\"2026-01-01T00:00:00Z\" NotOnOrAfter=\"2026-01-01T01:00:00Z\"/></saml:Assertion>')).not_on_or_after;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "inflate",
+      null,
+      "scalar",
+      "Raw-DEFLATE-inflate bytes to text (HTTP-Redirect binding), bounded against decompression bombs; NULL on failure",
+      null,
+      {
+        "vgi.category": "Transport",
+        "vgi.doc_llm": "Inflate raw-DEFLATE (and zlib-wrapped) bytes to text \u2014 the HTTP-Redirect binding compresses the XML with raw DEFLATE before base64. The inflate is bounded by a 64 MiB cap so a DEFLATE bomb (tiny payload, gigabytes inflated) is rejected rather than exhausting memory. Returns NULL when the bytes do not inflate or exceed the cap.",
+        "vgi.doc_md": "Inflate raw-DEFLATE bytes (redirect binding) to text, bomb-bounded; NULL on failure.",
+        "vgi.example_queries": "[{\"description\":\"Base64-decode then raw-DEFLATE-inflate a redirect-binding SAMLRequest to its XML text.\",\"sql\":\"SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA='));\"}]",
+        "vgi.keywords": "[\"inflate\",\"deflate\",\"decompress\",\"redirect binding\",\"samlrequest\",\"zlib\",\"decompression bomb\",\"gzip\"]",
+        "vgi.title": "DEFLATE Inflate"
+      },
+      "VARCHAR",
+      [
+        "data"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22603,
+      [
+        "SELECT saml.main.inflate(saml.main.b64decode('sylOzM0psHIsLcnIC0otLE0tLlGoyM3JK7YCS9gqlRblWeUnFmcWW+Ul5qYWW5UkWwU7+vpYGekZWBUU5ZfkJ+fnKCl4utgqxRcZKunbAQA='));"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "assertions",
+      null,
+      "scalar",
+      "Return every assertion as a LIST<STRUCT> (idx, id, signed, issuer, subject, in_response_to, parent); UNNEST it (parent reveals wrapping)",
+      null,
+      {
+        "vgi.category": "Decode",
+        "vgi.doc_llm": "Return every Assertion in a SAML message as a `LIST(STRUCT(idx, id, signed, issuer, subject, in_response_to, parent))`, one struct per assertion. UNNEST it over a column to list assertions with their parent element \u2014 a legitimate assertion is a child of the Response, so an assertion parented under Extensions, Object, or another Assertion is an XSW red flag. Empty list for a message with no assertions; NULL for a NULL input.",
+        "vgi.doc_md": "Return every assertion as a `LIST<STRUCT(idx, id, signed, issuer, subject, in_response_to, parent)>`; UNNEST it (parent reveals wrapping).",
+        "vgi.example_queries": "[{\"description\":\"Enumerate assertions and their parents to reveal wrapping.\",\"sql\":\"SELECT a.idx, a.id, a.parent FROM UNNEST(saml.main.assertions('<samlp:Response xmlns:samlp=\\\"urn:oasis:names:tc:SAML:2.0:protocol\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\"><saml:Assertion ID=\\\"_a1\\\"/></samlp:Response>')) AS _(a) ORDER BY a.idx;\"}]",
+        "vgi.keywords": "[\"saml assertions\",\"assertion list\",\"wrapping\",\"parent element\",\"signed\",\"issuer\",\"subject\",\"nameid\",\"xsw\",\"unnest\",\"list of struct\"]",
+        "vgi.title": "List SAML Assertions"
+      },
+      "STRUCT(idx UINTEGER, id VARCHAR, signed BOOLEAN, issuer VARCHAR, subject VARCHAR, in_response_to VARCHAR, parent VARCHAR)[]",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22597,
+      [
+        "SELECT a.idx, a.id, a.parent FROM UNNEST(saml.main.assertions('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:Assertion ID=\"_a1\"/></samlp:Response>')) AS _(a) ORDER BY a.idx;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "b64decode",
+      null,
+      "scalar",
+      "Base64-decode a string to bytes (accepts standard and URL-safe alphabets, padded or not); NULL on failure",
+      null,
+      {
+        "vgi.category": "Transport",
+        "vgi.doc_llm": "Decode a base64 string to a `BLOB`, accepting both the standard (`+/`) and URL-safe (`-_`) alphabets, padded or unpadded. This is the HTTP-POST-binding step: a SAMLResponse form field is base64 of the XML (or of DEFLATE-compressed XML for the redirect binding). Returns NULL when the input is not valid base64.",
+        "vgi.doc_md": "Base64-decode a string to bytes (standard or URL-safe), e.g. the SAMLResponse POST field; NULL if not base64.",
+        "vgi.example_queries": "[{\"description\":\"Decode a base64 SAMLResponse form field to raw bytes.\",\"sql\":\"SELECT saml.main.b64decode('PHNhbWw+');\"}]",
+        "vgi.keywords": "[\"base64\",\"b64decode\",\"decode\",\"post binding\",\"samlresponse\",\"url-safe base64\",\"bytes\"]",
+        "vgi.title": "Base64 Decode"
+      },
+      "BLOB",
+      [
+        "data"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22600,
+      [
+        "SELECT saml.main.b64decode('PHNhbWw+');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "authn",
+      null,
+      "scalar",
+      "Extract the AuthnStatement + AuthnContext: STRUCT(authn_instant TIMESTAMPTZ, session_index VARCHAR, session_not_on_or_after TIMESTAMPTZ, class_ref VARCHAR, decl_ref VARCHAR, authenticating_authority VARCHAR)",
+      null,
+      {
+        "vgi.category": "Decode",
+        "vgi.doc_llm": "Extract a SAML assertion's AuthnStatement and AuthnContext as a struct: the AuthnInstant and SessionNotOnOrAfter (`TIMESTAMPTZ`, UTC), the SessionIndex, the AuthnContextClassRef / DeclRef (the authentication method, e.g. PasswordProtectedTransport vs an MFA class \u2014 useful for spotting downgrades), and any AuthenticatingAuthority. Returns NULL when there is no AuthnStatement.",
+        "vgi.doc_md": "Get the AuthnStatement/AuthnContext (instant, session, auth class) as a struct.",
+        "vgi.example_queries": "[{\"description\":\"Read the AuthnContext class (e.g. detect MFA downgrade).\",\"sql\":\"SELECT (saml.main.authn('<saml:Assertion xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\"><saml:AuthnStatement><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement></saml:Assertion>')).class_ref;\"}]",
+        "vgi.keywords": "[\"authn\",\"authncontext\",\"authnstatement\",\"session index\",\"authninstant\",\"class ref\",\"authentication method\",\"mfa downgrade\",\"sso session\"]",
+        "vgi.title": "SAML AuthnContext"
+      },
+      "STRUCT(authn_instant TIMESTAMP WITH TIME ZONE, session_index VARCHAR, session_not_on_or_after TIMESTAMP WITH TIME ZONE, class_ref VARCHAR, decl_ref VARCHAR, authenticating_authority VARCHAR)",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22599,
+      [
+        "SELECT (saml.main.authn('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AuthnStatement><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement></saml:Assertion>')).class_ref;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "attributes",
+      null,
+      "scalar",
+      "Explode SAML attribute statements to a LIST<STRUCT> (statement_idx, name, name_format, friendly_name, value, value_type); UNNEST to long form",
+      null,
+      {
+        "vgi.category": "Decode",
+        "vgi.doc_llm": "Return a SAML assertion's AttributeStatement(s) as a `LIST(STRUCT(statement_idx, name, name_format, friendly_name, value, value_type))`, one struct per AttributeValue. UNNEST it over a column to explode attributes to long form, so multi-valued attributes (roles, groups) fan out into one row each and can be pivoted or joined downstream. Returns an empty list for a message with no attributes and NULL for a NULL input.",
+        "vgi.doc_md": "Return SAML attribute values as a `LIST<STRUCT(statement_idx, name, name_format, friendly_name, value, value_type)>`; UNNEST to explode to long form.",
+        "vgi.example_queries": "[{\"description\":\"Explode a multi-valued attribute to long form (one row per value).\",\"sql\":\"SELECT a.name, a.value FROM UNNEST(saml.main.attributes('<saml:Assertion xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\"><saml:AttributeStatement><saml:Attribute Name=\\\"role\\\"><saml:AttributeValue>admin</saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS _(a) ORDER BY a.value;\"}]",
+        "vgi.executable_examples": "[\n  {\n    \"description\": \"Identify a SAML message by its root element.\",\n    \"sql\": \"SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\\\"urn:oasis:names:tc:SAML:2.0:protocol\\\"/>') AS kind\",\n    \"expected_result\": [{\"kind\": \"Response\"}]\n  },\n  {\n    \"description\": \"Triage why a blob is not a usable SAML message.\",\n    \"sql\": \"SELECT (saml.main.well_formed('not a saml message')).kind AS kind\",\n    \"expected_result\": [{\"kind\": \"not-saml\"}]\n  },\n  {\n    \"description\": \"Base64-decode a SAMLResponse POST field to its XML text.\",\n    \"sql\": \"SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded\",\n    \"expected_result\": [{\"decoded\": \"<saml>\"}]\n  },\n  {\n    \"description\": \"Flag the multiple-assertions XSW indicator on a two-assertion Response.\",\n    \"sql\": \"SELECT list_contains(saml.main.anomalies('<samlp:Response xmlns:samlp=\\\"urn:oasis:names:tc:SAML:2.0:protocol\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\" ID=\\\"_r\\\"><saml:Assertion ID=\\\"_a1\\\"/><saml:Assertion ID=\\\"_a2\\\"/></samlp:Response>'), 'multiple-assertions') AS has_multi\",\n    \"expected_result\": [{\"has_multi\": true}]\n  },\n  {\n    \"description\": \"Explode a multi-valued attribute into one row per value.\",\n    \"sql\": \"SELECT a.value AS value FROM UNNEST(saml.main.attributes('<saml:Assertion xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\"><saml:AttributeStatement><saml:Attribute Name=\\\"role\\\"><saml:AttributeValue>admin</saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS _(a) ORDER BY a.value\",\n    \"expected_result\": [{\"value\": \"admin\"}, {\"value\": \"user\"}]\n  }\n]",
+        "vgi.keywords": "[\"saml attributes\",\"attributestatement\",\"attributevalue\",\"claims\",\"roles\",\"groups\",\"explode\",\"unnest\",\"long form\",\"list of struct\",\"pivot\"]",
+        "vgi.title": "Explode SAML Attributes"
+      },
+      "STRUCT(statement_idx UINTEGER, \"name\" VARCHAR, name_format VARCHAR, friendly_name VARCHAR, \"value\" VARCHAR, value_type VARCHAR)[]",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22598,
+      [
+        "SELECT a.name, a.value FROM UNNEST(saml.main.attributes('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AttributeStatement><saml:Attribute Name=\"role\"><saml:AttributeValue>admin</saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS _(a) ORDER BY a.value;"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "anomalies",
+      null,
+      "scalar",
+      "Flag XSW (XML Signature Wrapping) / Golden-SAML / structural anomalies as a LIST<VARCHAR>; empty list = no structural red flag found (not a safety guarantee)",
+      null,
+      {
+        "vgi.category": "Detect",
+        "vgi.doc_llm": "Return the structural anomaly flags for a SAML message as a `LIST(VARCHAR)`. These are the invariants every XML Signature Wrapping (XSW1-XSW8) attack violates plus the XXE-class text-extraction tells: multiple-assertions, signature-covers-other-element, reference-uri-id-mismatch, unsigned-assertion-in-signed-response, signature-placement-anomaly, detached-signature, nameid-comment-splitting, digest-mismatch, c14n-inclusive-on-moved-assertion, and encrypted-assertion-present. An EMPTY list is not a safety guarantee \u2014 Golden SAML (a forgery with a stolen but valid IdP key) leaves no structural trace, so combine this with a trust-table JOIN on signer_cert_sha256.",
+        "vgi.doc_md": "List XSW / structural red flags for a SAML message (e.g. `multiple-assertions`, `signature-covers-other-element`, `digest-mismatch`); empty != safe.",
+        "vgi.example_queries": "[{\"description\":\"Surface signature-wrapping / structural red flags (here, multiple-assertions) for a message.\",\"sql\":\"SELECT saml.main.anomalies('<samlp:Response xmlns:samlp=\\\"urn:oasis:names:tc:SAML:2.0:protocol\\\" xmlns:saml=\\\"urn:oasis:names:tc:SAML:2.0:assertion\\\"><saml:Assertion ID=\\\"_a1\\\"/><saml:Assertion ID=\\\"_a2\\\"/></samlp:Response>');\"}]",
+        "vgi.keywords": "[\"xsw\",\"signature wrapping\",\"golden saml\",\"anomalies\",\"multiple assertions\",\"digest mismatch\",\"detached signature\",\"comment splitting\",\"attack detection\",\"detection engineering\"]",
+        "vgi.title": "SAML Signature-Wrapping Anomalies"
+      },
+      "VARCHAR[]",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22596,
+      [
+        "SELECT saml.main.anomalies('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:Assertion ID=\"_a1\"/><saml:Assertion ID=\"_a2\"/></samlp:Response>');"
+      ],
+      "CONSISTENT",
+      []
+    ],
+    [
+      "saml",
+      "22592",
+      "main",
+      "well_formed",
+      null,
+      "scalar",
+      "Triage a SAML blob into STRUCT(ok BOOL, kind VARCHAR, detail VARCHAR); kind is one of ok / not-xml / not-saml / bad-base64 / bad-deflate / dtd-present / entity-blocked / truncated / encoding-error. Never panics.",
+      null,
+      {
+        "vgi.category": "Diagnostics",
+        "vgi.doc_llm": "Classify an attacker-controlled blob into a (ok, kind, detail) triage verdict without ever panicking. `kind` is one of ok, not-xml, not-saml, bad-base64, bad-deflate, dtd-present, entity-blocked, truncated, or encoding-error. The dtd-present and entity-blocked kinds double as XXE / billion-laughs signals: the hardened loader rejects any DOCTYPE/entity before it can be expanded, so their presence is reported rather than processed.",
+        "vgi.doc_md": "Triage a SAML blob into `(ok, kind, detail)`; `dtd-present`/`entity-blocked` flag XXE / billion-laughs attempts.",
+        "vgi.example_queries": "[{\"description\":\"Classify why a blob is not a usable SAML message (kind = 'not-saml' here).\",\"sql\":\"SELECT (saml.main.well_formed('not a saml message')).kind;\"}]",
+        "vgi.keywords": "[\"well formed\",\"validate\",\"xxe\",\"billion laughs\",\"dtd\",\"entity\",\"triage\",\"bad base64\",\"truncated\",\"not xml\",\"not saml\",\"parse error\"]",
+        "vgi.title": "SAML Well-Formedness"
+      },
+      "STRUCT(ok BOOLEAN, kind VARCHAR, detail VARCHAR)",
+      [
+        "msg"
+      ],
+      [
+        "ANY"
+      ],
+      null,
+      null,
+      false,
+      true,
+      null,
+      22608,
+      [
+        "SELECT (saml.main.well_formed('not a saml message')).kind;"
+      ],
+      "CONSISTENT",
+      []
+    ]
+  ]
+}

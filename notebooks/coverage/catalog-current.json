@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "repository": "Query-farm/vgi-saml",
+  "revision": "ea38cc63c37cc239e05787ea79f744b82672a1d1",
+  "captured_at": "2026-11-14T21:57:09.751914+00:00",
+  "default_schema": "main",
+  "scope": "all_public_functions_and_tables",
+  "complete": true,
+  "evidence": [
+    {
+      "path": "coverage/catalog-provenance.json",
+      "sha256": "3841d72bceb0cdbb00b247fd7e186b5e4d71b5194c587cc671759f8e90fda7fc",
+      "description": "Precise runtime/source identities and scope of compatibility review."
+    },
+    {
+      "path": "coverage/current-source-registration.json",
+      "sha256": "e5ec83a89e04ecc15a5ba1da3b45e60e37cd6bdff2993f7832b32cbcaab74036",
+      "description": "Exhaustive current function/view registrations, immutable source links/hashes and complete implementation diff; no current runtime execution."
+    }
+  ],
+  "objects": [
+    {
+      "schema": "main",
+      "name": "unwrap",
+      "kind": "function",
+      "signatures": [
+        "unwrap(VARCHAR) -> VARCHAR"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "signatures",
+      "kind": "function",
+      "signatures": [
+        "signatures(ANY) -> STRUCT(idx UINTEGER, \"scope\" VARCHAR, references_id VARCHAR, signed_element VARCHAR, c14n_ok BOOLEAN, digest_ok BOOLEAN, sig_valid BOOLEAN, signer_cert_sha256 VARCHAR)[]"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "decode",
+      "kind": "function",
+      "signatures": [
+        "decode(ANY) -> STRUCT(message_type VARCHAR, response_id VARCHAR, assertion_id VARCHAR, issuer VARCHAR, subject VARCHAR, subject_format VARCHAR, subject_sp_qualifier VARCHAR, confirmation_method VARCHAR, recipient VARCHAR, in_response_to VARCHAR, subject_not_on_or_after TIMESTAMP WITH TIME ZONE, not_before TIMESTAMP WITH TIME ZONE, not_on_or_after TIMESTAMP WITH TIME ZONE, audience VARCHAR, audiences VARCHAR[], authn_instant TIMESTAMP WITH TIME ZONE, session_index VARCHAR, authn_context VARCHAR, status VARCHAR, destination VARCHAR, issue_instant TIMESTAMP WITH TIME ZONE, \"version\" VARCHAR, assertion_count UINTEGER, encrypted_count UINTEGER, signed BOOLEAN)"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "message_type",
+      "kind": "function",
+      "signatures": [
+        "message_type(ANY) -> VARCHAR"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "signature",
+      "kind": "function",
+      "signatures": [
+        "signature(ANY) -> STRUCT(signed BOOLEAN, c14n_ok BOOLEAN, digest_ok BOOLEAN, sig_valid BOOLEAN, algo VARCHAR, c14n_method VARCHAR, digest_method VARCHAR, signer_cert BLOB, signer_cert_sha256 VARCHAR, signer_subject VARCHAR, signer_issuer VARCHAR, \"references\" STRUCT(uri VARCHAR, digest_method VARCHAR, digest_ok BOOLEAN, resolved_element VARCHAR)[])"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "conditions",
+      "kind": "function",
+      "signatures": [
+        "conditions(ANY) -> STRUCT(not_before TIMESTAMP WITH TIME ZONE, not_on_or_after TIMESTAMP WITH TIME ZONE, audiences VARCHAR[], one_time_use BOOLEAN, proxy_restriction_count UINTEGER, proxy_audiences VARCHAR[])"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "inflate",
+      "kind": "function",
+      "signatures": [
+        "inflate(ANY) -> VARCHAR"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "assertions",
+      "kind": "function",
+      "signatures": [
+        "assertions(ANY) -> STRUCT(idx UINTEGER, id VARCHAR, signed BOOLEAN, issuer VARCHAR, subject VARCHAR, in_response_to VARCHAR, parent VARCHAR)[]"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "b64decode",
+      "kind": "function",
+      "signatures": [
+        "b64decode(ANY) -> BLOB"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "authn",
+      "kind": "function",
+      "signatures": [
+        "authn(ANY) -> STRUCT(authn_instant TIMESTAMP WITH TIME ZONE, session_index VARCHAR, session_not_on_or_after TIMESTAMP WITH TIME ZONE, class_ref VARCHAR, decl_ref VARCHAR, authenticating_authority VARCHAR)"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "attributes",
+      "kind": "function",
+      "signatures": [
+        "attributes(ANY) -> STRUCT(statement_idx UINTEGER, \"name\" VARCHAR, name_format VARCHAR, friendly_name VARCHAR, \"value\" VARCHAR, value_type VARCHAR)[]"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "anomalies",
+      "kind": "function",
+      "signatures": [
+        "anomalies(ANY) -> VARCHAR[]"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "well_formed",
+      "kind": "function",
+      "signatures": [
+        "well_formed(ANY) -> STRUCT(ok BOOLEAN, kind VARCHAR, detail VARCHAR)"
+      ],
+      "authentication": "none",
+      "access": "read"
+    }
+  ]
+}

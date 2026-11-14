@@ -1,0 +1,11 @@
+{
+  "repository": "Query-farm/vgi-saml",
+  "release_tag": "v0.4.0",
+  "release_revision": "4ca77f71318b77a80ef2bede4be8bc56b48a253f",
+  "current_public_revision": "ea38cc63c37cc239e05787ea79f744b82672a1d1",
+  "engine": "Haybarn 2.0.0rc11 / VGI e75482339d",
+  "released_launch": "github-auto://Query-farm/vgi-saml@v0.4.0",
+  "comparison": "Exhaustive current registration at ea38cc63c37cc239e05787ea79f744b82672a1d1 lists 13 scalar names and no tables/views. Names/signatures match the released runtime. Complete release-to-current diff adds composed metadata/examples/tests and corrects one example expected_result (not-saml to bad-base64); runtime compute/core/dependencies unchanged. Only v0.4.0 is executed; current-interface review is separate.",
+  "data_isolation": "Empty temporary SQL-secret storage; persistence disabled. Eight unchanged synthetic fixture files and manifest plus malformed/NULL controls. No private keys, real token, login, identity provider, network verification, account or credential.",
+  "captured_at": "2026-11-14T21:57:09.751914+00:00"
+}

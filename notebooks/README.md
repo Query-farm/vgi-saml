@@ -1,68 +1,140 @@
-# VGI SAML notebooks
+# SAML Forensics example
 
-[01 · A valid signature is one piece of evidence](01_a_valid_signature_is_one_piece_of_evidence.ipynb) separates XML parsing, signature mathematics, reference digests, assertion coverage and independently supplied signer context. It uses real VGI SQL over committed synthetic test vectors and retains all input rows.
+[01 · A valid signature is one piece of evidence](01_a_valid_signature_is_one_piece_of_evidence.ipynb)
+retains the signature/reference/assertion/signer-context audit and adds root-message classification
+and attribute multiplicity. It covers eight of thirteen public SQL surfaces in one coherent
+workflow. All inputs are synthetic test vectors; the notebook does not authenticate a login.
 
-## Run
+Read saved results on GitHub or use **Open in Colab**, then Run All. A single downloaded notebook
+installs the base shared tools and retrieves hash-verified fixtures. Actual hosted Colab is
+untested; validation includes a fresh local Python 3.12 notebook-only environment with data,
+plotting and kernel libraries already loaded.
 
-Install [uv](https://docs.astral.sh/uv/). From the repository root:
+## Run from this directory
 
-```sh
-uv sync --project notebooks --frozen
-uv run --project notebooks --frozen python notebooks/execute.py
-```
-
-The complete `notebooks/` directory also runs independently of this checkout:
-
-```sh
-cd notebooks
-uv sync --frozen
-uv run --frozen python execute.py
-```
-
-Initial setup downloads Python dependencies, the VGI community extension and the pinned native worker release. Analysis is local. No Rust toolchain, locally built worker, identity provider, credentials or private token data is needed. The release was executed on macOS Apple silicon; other available platform archives are listed on the worker's release page.
-
-In VS Code select `notebooks/.venv/bin/python` and set the notebook working directory to `notebooks/`. Other Jupyter editors can register it:
+Requires Python 3.11+, [uv](https://docs.astral.sh/uv/) and internet for first-time Python/shared
+package, community extension, fixture and native worker release downloads.
 
 ```sh
-uv run --project notebooks --frozen python -m ipykernel install --user --name vgi-saml-notebooks --display-name 'Python (vgi-saml notebooks)'
+uv sync --locked --extra runner
+uv run --locked --extra runner vgi-notebooks
 ```
 
-Restart and run all after changing the parameter. Connection and analytical SQL stay visible; imports, plotting, interpretation-generation source, assertions and cleanup are folded. Saved output embeds both charts.
+The [shared package v0.3.24](https://github.com/Query-farm/vgi-example-notebooks/tree/v0.3.24) supplies canonical branding, SVG presentation, isolated SQL setup and
+atomic execution. Colab installs only its base package; local publication uses the optional
+`[runner]` extra and independent `uv.lock`. The complete directory runs without its parent worker
+checkout. No Rust toolchain, local worker build, identity provider, credentials or real token data
+is required. Validation uses macOS arm64; the release page lists other available platform assets.
+
+```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+SET TimeZone='UTC';
+ATTACH 'saml' (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-saml@v0.4.0');
+```
+
+VGI downloads, SHA-256-verifies and caches the platform release. The tag resolves to
+`4ca77f71318b77a80ef2bede4be8bc56b48a253f`. Worker dependency compatibility belongs to that release;
+no transitive overrides are added. Upgrade the explicit release and rerun both settings.
+Haybarn 2.0.0rc11 is pinned separately in the notebook environment.
+
+`connect(globals())` creates empty temporary SQL-secret storage, disables persistence and prevents
+JupySQL's saved default-connection autoload. No credentials are required; cleanup closes the
+connection and removes the temporary store. Existing secrets are not read or modified.
+
+Optional local kernel:
+
+```sh
+uv run --locked --extra runner python -m ipykernel install --user \
+  --name vgi-saml-notebooks --display-name 'Python (vgi-saml notebooks)'
+```
+
+Restart and Run All after editing. Parameters, setup, ATTACH and analytical SQL remain visible;
+Python presentation source has folding metadata. Defaults retain native SVG plus committed image
+links for GitHub. Experiments keep native SVG only; generated logs, exports and copies are ignored.
 
 ## Experiment
 
 ```sh
-uv run --project notebooks --frozen python notebooks/execute.py \
-  --parameters '{"INCLUDE_EC_SIGNER":true}' \
-  --output-dir notebooks/validation/ec-in-inventory
+uv run --locked --extra runner vgi-notebooks \
+  --parameters '{"INCLUDE_EC_SIGNER":true}' --output-dir validation/ec-in-inventory
 ```
 
-The default excludes the EC fixture certificate from the synthetic inventory. Including it changes only inventory membership and the resulting review category. Reset to false for the saved default.
+The default leaves the EC certificate outside the authored signer inventory. Adding it changes
+only that inventory membership and the ordered review category. Parsed subjects, signature math,
+reference digests, structural flags, message kinds and claimed attributes must stay fixed.
+A matching fingerprint does not repair changed content or authorize an identity. Restore false
+for publication. The parameter accepts booleans only.
 
-Overrides require a separate destination. The runner rejects unknown parameter names and writes a notebook only after a successful execution, preserving saved outputs on failure. Experiment copies include relative branding, fixtures, helpers and environment files. Logs, review charts and experiment copies are Git-ignored.
+Overrides require a separate destination. Unknown parameters, source-overwriting paths and invalid
+values fail without replacing the last successful default or experiment. Copies include portable
+companions; no source checkout or user credentials accompany them.
 
-## Worker and fixture provenance
+## Fixture provenance
 
-The visible literal `ATTACH` uses `github-auto://Query-farm/vgi-saml@v0.4.0`. VGI downloads, verifies and caches that platform release. Haybarn 2.0.0rc11 and the notebook dependencies are pinned in the independent lockfile. Upgrading requires changing the explicit release and reexecuting both parameter settings.
+The eight original fixture files are unchanged copies from [test/data at 1baf314](https://github.com/Query-farm/vgi-saml/tree/1baf3149f23d752f890d05f96841b585bca224e0/test/data):
+five XML messages, one base64 representation and two SHA-256 certificate fingerprint files.
+The [original generator](https://github.com/Query-farm/vgi-saml/blob/1baf3149f23d752f890d05f96841b585bca224e0/crates/saml-core/tests/vectors/_generate.py)
+uses signxml/lxml and generated RSA/EC keys. Regeneration creates new key material; committed fixture
+bytes provide reproducibility. No private keys are included. SQL adds malformed text and NULL.
+[manifest.json](fixtures/manifest.json) records source and file hashes, checked during setup.
 
-The eight files in `fixtures/` are unchanged copies from this repository's [test/data at 1baf314](https://github.com/Query-farm/vgi-saml/tree/1baf3149f23d752f890d05f96841b585bca224e0/test/data): five XML messages, one base64 representation, and two certificate SHA-256 fingerprint files. Their [original generator](https://github.com/Query-farm/vgi-saml/blob/1baf3149f23d752f890d05f96841b585bca224e0/crates/saml-core/tests/vectors/_generate.py) uses signxml/lxml and generated RSA/EC keys. Regeneration creates new key material, so the committed fixtures are the reproducible input; no private keys are included here. SQL adds malformed text and a NULL row. No live SAML exchange occurs.
+The declared inventory comes from the separate fingerprint files, not trust inferred from a
+message. Identities, certificates and changed/wrapped content are synthetic validation vectors.
+No live SAML exchange, network identity lookup or authentication action occurs.
 
-The declared inventory is test data supplied from the separate fingerprint files, not trust inferred from a message. All identities, certificates and changed/wrapped messages are synthetic worker validation fixtures. File-level SHA-256 provenance is listed in `fixtures/manifest.json`.
+## Interpretation
 
-## Reading the evidence
+The six recognizable messages all have Response roots, including changed, wrapped and unsigned
+content. `message_type` provides context rather than a validity filter; malformed `unknown` and
+missing NULL remain distinct. Five of eight inputs have passing signature mathematics, while the
+changed-subject fixture still fails its reference digest. The wrapping fixture retains a valid
+digest/signature but contains two assertions: the first decoded assertion differs from the
+referenced one. An empty anomaly list does not establish validity for unsigned or malformed input.
 
-Five of the eight records have passing signature mathematics. The changed-content fixture still fails the reference digest; the wrapping fixture retains a valid digest and signature but contains two assertions, with the first decoded assertion different from the referenced one. The unsigned and malformed fixtures demonstrate that an empty anomaly list cannot establish validity. The audit preserves NULL input separately.
+The matrix distinguishes unavailable/inapplicable checks from false. Raw SQL retains exact worker
+values. The ordered category chart keeps all eight inputs and zero-count categories. A category
+such as “Consistent with listed signer” summarizes only the demonstrated checks, not a login verdict.
 
-The matrix uses an em dash for unavailable or inapplicable checks, while the raw SQL display keeps the worker's exact output. The second chart assigns one explicit, ordered review category per input and retains zero-count categories. Its labels summarize this limited audit, not an authentication verdict. Adding the EC certificate moves one record from outside-inventory to consistent-with-listed-signer; cryptographic and parsing evidence stay fixed.
+The assertion/reference join includes the input-record key, preventing repeated assertion IDs
+across files from cross-matching. It is a diagnostic for these assertion-signed fixtures, not a
+general coverage algorithm for response signatures, duplicate IDs or arbitrary transforms.
 
-The assertion/reference join is a diagnostic for these assertion-signed fixtures. It includes the input record key, so repeated assertion IDs across files do not cross-match. It is not a general signature-coverage algorithm for response signatures, duplicate IDs, transforms or every SAML profile.
+Attributes are one row per AttributeValue: the wrapped fixture doubles three rows to six while
+still reducing to the same two distinct role values. `statement_idx` identifies statement order,
+not an assertion ID or signature-reference key. Do not attach every flattened role to the first
+decoded subject or treat deduplication as evidence that the source is unambiguous. Extracted claims
+are values to investigate, not authorization.
 
-The worker's signature mathematics uses the embedded certificate. This example does not evaluate a full trust chain, certificate revocation, SAML Conditions time windows, recipient, audience, request correlation or replay. A stolen key whose certificate remains listed also matches the inventory. A matching fingerprint cannot detect that compromise by itself, and the notebook does not authorize a login. See [XML Signature core validation](https://www.w3.org/TR/xmldsig-core/#sec-CoreValidation) for the separate reference and signature checks.
+Signature mathematics uses the embedded certificate. The notebook does not evaluate a full trust
+chain, revocation, Conditions time windows, audience, recipient, request correlation, replay or
+service-provider policy. A stolen key whose certificate remains listed also matches the inventory.
+See [XML Signature core validation](https://www.w3.org/TR/xmldsig-core/#sec-CoreValidation) for the
+separate reference and signature checks. These limits apply even if every displayed cell is green.
 
-## Validation
+## Coverage and validation
 
-The default completed in 2.5 seconds; the detached directory experiment completed in 15.0 seconds. Both passed 12 SQL checks and the eight-record reconciliation. Four chart renderings and three runner preservation guards were reviewed; parsed evidence and assertion-reference displays are identical across settings. All eight fixture files match the original source and provenance hashes.
+[coverage.json](coverage.json) records eight of thirteen named SQL surfaces, with successful visible
+SQL, result interpretation and editorial review. The complete runtime functions/tables/views
+exports establish thirteen functions, zero physical tables and zero views. This exceeds the
+seven-object target for a worker with more than ten surfaces. `conditions`, `authn`, `b64decode`,
+`inflate` and `unwrap` remain explicitly uncovered; automatic transport normalization is not counted
+as a separate invocation of those plumbing functions.
 
-Source validation passed 38 Rust tests, 79 SQL assertions in five cases, the locked release build, Clippy, rustfmt and warning-clean rustdoc. Notebook Ruff and structural review passed. The unchanged source metadata gate (`vgi-lint-check==2.5.0`, executed examples and AI checks) returned exit 2: score 96/100, one VGI417 warning for oversized `saml.main` metadata, zero errors or informational findings. This pre-existing metadata issue is documented separately from the successful notebook execution. Worker source, test vectors, Cargo manifests and root lockfile remain unchanged.
+Current public source retains the same interface; differences add composed metadata/examples/tests
+and correct an example expectation. Runtime/core behavior and dependencies are unchanged. Coverage
+separates exact released-runtime demonstrations from current-interface compatibility review;
+no current source build or runtime execution is claimed.
 
-Official Query.Farm Strata Sun and VGI artwork is copied unchanged from the approved assets. Linked Query.Farm branding appears at the top and final bottom.
+Both parameter settings execute with the actual native release. Validation retains the original
+12 SQL checks and eight-record reconciliation, adds root-kind/attribute population controls,
+checks all fixture hashes, compares unchanged evidence, tests runner preservation, reviews figures
+and checks actual GitHub SVG rendering. The fresh preloaded notebook-only bootstrap is separate
+from a hosted Colab test.
+
+Existing green [source CI 43579874212](https://github.com/Query-farm/vgi-saml/actions/runs/43579874212)
+is reused, including metadata, Rust/unit/proptest, SQL and audit jobs. No worker build, repeated
+source suite or CI/container dispatch is performed for this notebook-only migration. The previous
+local strict metadata run reported VGI417 overlong schema metadata (96/100, one warning); that
+historical stricter result is retained separately from the green CI gate, not claimed rerun or
+fixed here. Source, Cargo manifests/lock and original fixtures remain unchanged.

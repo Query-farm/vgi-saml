@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-released.json",
+      "sha256": "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "catalog_sha256": "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+        "notes": "All 13 named public surfaces retained. Eight demonstrations exceed the seven-object threshold; conditions/authn/transport helpers remain explicitly uncovered. Exhaustive current registration at ea38cc63c37cc239e05787ea79f744b82672a1d1 lists 13 scalar names and no tables/views. Names/signatures match the released runtime. Complete release-to-current diff adds composed metadata/examples/tests and corrects one example expected_result (not-saml to bad-base64); runtime compute/core/dependencies unchanged. Only v0.4.0 is executed; current-interface review is separate."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "catalog_sha256": "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0",
+        "notes": "All 13 named public surfaces retained. Eight demonstrations exceed the seven-object threshold; conditions/authn/transport helpers remain explicitly uncovered. Exhaustive current registration at ea38cc63c37cc239e05787ea79f744b82672a1d1 lists 13 scalar names and no tables/views. Names/signatures match the released runtime. Complete release-to-current diff adds composed metadata/examples/tests and corrects one example expected_result (not-saml to bad-base64); runtime compute/core/dependencies unchanged. Only v0.4.0 is executed; current-interface review is separate."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "34f990a014989f923b27d347642c2cbeb41ff58be832b936e2cadda4159dc044"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "message_type"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "saml-kind-sql",
+          "reference": "saml.main.message_type"
+        }
+      ],
+      "narrative_cells": [
+        "saml-kind-story"
+      ],
+      "result_cells": [
+        "saml-kind-sql",
+        "saml-kind-result"
+      ],
+      "interpretation_cells": [
+        "saml-kind-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Retain message-kind context without treating a recognized root as validity.",
+        "finding": "Six of eight inputs are Response, including changed/wrapped/unsigned messages. Malformed input is unknown while absent input is NULL. Root classification and base64 normalization do not distinguish signature evidence."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "well_formed"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "7383a150",
+          "reference": "saml.main.well_formed"
+        }
+      ],
+      "narrative_cells": [
+        "ab330944"
+      ],
+      "result_cells": [
+        "7383a150",
+        "2849da62"
+      ],
+      "interpretation_cells": [
+        "2849da62"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Separate parsing from cryptographic and missing-input evidence.",
+        "finding": "Six recognized messages parse; malformed input fails even with an empty anomaly list, while missing input retains NULL. Matrix preserves unavailable/inapplicable versus false checks; root kind does not override parse failure."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "decode"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "7383a150",
+          "reference": "saml.main.decode"
+        }
+      ],
+      "narrative_cells": [
+        "58397834"
+      ],
+      "result_cells": [
+        "7383a150",
+        "f685a8d4",
+        "saml-claims-result"
+      ],
+      "interpretation_cells": [
+        "saml-claims-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Expose the first decoded subject/assertion without assuming every claim or signature belongs to it.",
+        "finding": "The wrapping fixture has two assertions and its first decoded assertion differs from the signature reference. Record-scoped joins preserve that distinction; flattened claims are not automatically assigned to the decoded first subject."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "signature"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "7383a150",
+          "reference": "saml.main.signature"
+        }
+      ],
+      "narrative_cells": [
+        "ab330944"
+      ],
+      "result_cells": [
+        "7383a150",
+        "2849da62",
+        "edf2b062"
+      ],
+      "interpretation_cells": [
+        "2849da62"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Separate signature mathematics, canonicalization and referenced-content digest from external signer context.",
+        "finding": "Five inputs pass signature mathematics. Changed subject still fails content digest; embedded-certificate math is not trust. Adding the EC certificate changes inventory membership/category only and does not repair cryptographic or structural failures."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "anomalies"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "7383a150",
+          "reference": "saml.main.anomalies"
+        }
+      ],
+      "narrative_cells": [
+        "ab330944"
+      ],
+      "result_cells": [
+        "7383a150",
+        "2849da62",
+        "edf2b062"
+      ],
+      "interpretation_cells": [
+        "2849da62"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Retain structural findings and avoid interpreting an empty list as validity.",
+        "finding": "Changed fixture reports digest-mismatch and wrapping fixture reports multiple-assertions. Unsigned/malformed examples can have empty lists and still fail separate evidence. Ordered review categories retain all eight inputs."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "assertions"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "7383a150",
+          "reference": "saml.main.assertions"
+        }
+      ],
+      "narrative_cells": [
+        "58397834"
+      ],
+      "result_cells": [
+        "f685a8d4",
+        "2849da62"
+      ],
+      "interpretation_cells": [
+        "2849da62"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Enumerate assertion identity/parent before joining signature references within each input.",
+        "finding": "Wrapping fixture emits two assertions; only one directly joins its signature reference. Composite record/assertion key prevents repeated fixture IDs across files from cross-matching; scope caveats remain explicit."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "signatures"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "7383a150",
+          "reference": "saml.main.signatures"
+        }
+      ],
+      "narrative_cells": [
+        "58397834"
+      ],
+      "result_cells": [
+        "f685a8d4",
+        "2849da62"
+      ],
+      "interpretation_cells": [
+        "2849da62"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Inspect signature scope/reference IDs and cryptographic fields beside assertion rows.",
+        "finding": "The signed reference targets a different assertion from the wrapping fixture first decode. Math and digest still pass for that referenced assertion; this is a narrow diagnostic, not a general response-signature or transform coverage algorithm."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "attributes"
+      },
+      "notebook": "01_a_valid_signature_is_one_piece_of_evidence.ipynb",
+      "sql": [
+        {
+          "cell": "saml-claims-sql",
+          "reference": "saml.main.attributes"
+        }
+      ],
+      "narrative_cells": [
+        "saml-claims-story"
+      ],
+      "result_cells": [
+        "saml-claims-sql",
+        "saml-claims-result"
+      ],
+      "interpretation_cells": [
+        "saml-claims-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root/notebooks_ortools",
+        "reviewed_at": "2026-11-14T21:57:09.751914+00:00",
+        "notebook_sha256": "d320fdea6ef657e6ff999116565f9c0742d2c35c6a698fc45f9842391e014767",
+        "catalog_sha256": [
+          "9d594776e8abd8dd6c1e2f3cc4b8167631d32bdbe9c8d1810e903d365d65702c",
+          "cea196852efd070bad036541ed60b92f19f60e6e1dee72e21ddf12c7f0e6d1b0"
+        ],
+        "purpose": "Show how flattening and deduplicating claims can conceal source multiplicity.",
+        "finding": "Wrapped message has six attribute-value rows across two statements versus three across one for RSA; role rows double two→four but both yield two distinct role values. statement_idx is not an assertion/signature key, and claimed values do not authorize the decoded subject."
+      }
+    }
+  ]
+}
