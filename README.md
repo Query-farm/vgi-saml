@@ -116,6 +116,16 @@ LEFT JOIN idp_trust idp ON idp.cert_sha256 = (x.s).signer_cert_sha256;
 
 -- 5. Raw plumbing: base64 + inflate a HTTP-Redirect SAMLRequest to its XML text.
 SELECT saml.main.inflate(saml.main.b64decode(req)) AS xml FROM redirect_params;
+
+-- 6. XSW coverage: assertions that no signature's Reference points at — the
+--    wrapped "evil" assertion a naive consumer would read.
+SELECT r.login_id, a.id AS assertion_id, a.subject
+FROM raw_saml r, UNNEST(saml.main.assertions(r.saml_response)) AS _(a)
+WHERE a.id NOT IN (
+  SELECT s.references_id
+  FROM UNNEST(saml.main.signatures(r.saml_response)) AS _(s)
+  WHERE s.references_id IS NOT NULL)
+ORDER BY r.login_id, a.idx;
 ```
 
 > The spec sketches `attributes` / `signatures` / `assertions` as LATERAL **table

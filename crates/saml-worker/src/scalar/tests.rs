@@ -81,6 +81,45 @@ fn well_formed_struct_kinds() {
     assert_eq!(kind.value(0), "not-saml");
 }
 
+/// The published `well_formed('not a saml message')` example (and its
+/// `vgi.executable_examples` expected_result) must match what the worker
+/// returns: non-XML text is sniffed as a base64 wrapper → `bad-base64`.
+#[test]
+fn well_formed_plain_text_is_bad_base64() {
+    let out = run_scalar_blob(&well_formed::WellFormed, &[Some(b"not a saml message")]).unwrap();
+    let kind = out
+        .as_struct()
+        .column(1)
+        .as_string::<i32>()
+        .value(0)
+        .to_string();
+    assert_eq!(kind, "bad-base64");
+}
+
+/// Each composed example is carried within the first five examples of the
+/// function that drives it (all the vgi-lint agent simulator shows).
+#[test]
+fn composed_examples_on_driving_function() {
+    use vgi::ScalarFunction;
+    let cases: [(&dyn ScalarFunction, (&str, &str)); 4] = [
+        (&fanout::Assertions, crate::composed::UNSIGNED_ASSERTIONS),
+        (
+            &well_formed::WellFormed,
+            crate::composed::TRIAGE_THEN_DECODE,
+        ),
+        (&anomalies::Anomalies, crate::composed::LOGIN_VERDICT),
+        (&fanout::Attributes, crate::composed::SUBJECT_ROLES),
+    ];
+    for (f, (_, sql)) in cases {
+        let md = f.metadata();
+        assert!(
+            md.examples.iter().take(5).any(|e| e.sql == sql),
+            "{} lacks its composed example",
+            f.name()
+        );
+    }
+}
+
 #[test]
 fn conditions_and_authn_bind_structs() {
     assert!(matches!(

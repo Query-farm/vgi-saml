@@ -23,17 +23,20 @@ impl ScalarFunction for Anomalies {
     }
 
     fn metadata(&self) -> FunctionMetadata {
-        let examples = vec![FunctionExample {
-            sql: "SELECT saml.main.anomalies('<samlp:Response \
+        let examples = vec![
+            FunctionExample {
+                sql: "SELECT saml.main.anomalies('<samlp:Response \
                   xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
                   xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
                   <saml:Assertion ID=\"_a1\"/><saml:Assertion ID=\"_a2\"/></samlp:Response>');"
-                .into(),
-            description: "Surface signature-wrapping / structural red flags (here, \
+                    .into(),
+                description: "Surface signature-wrapping / structural red flags (here, \
                           multiple-assertions) for a message."
-                .into(),
-            expected_output: None,
-        }];
+                    .into(),
+                expected_output: None,
+            },
+            crate::composed::example(crate::composed::LOGIN_VERDICT),
+        ];
         let mut tags = crate::meta::object_tags(
             "SAML Signature-Wrapping Anomalies",
             "Return the structural anomaly flags for a SAML message as a `LIST(VARCHAR)`. These \

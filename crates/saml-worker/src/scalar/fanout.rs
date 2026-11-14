@@ -91,7 +91,7 @@ const EXECUTABLE_EXAMPLES: &str = r#"[
   {
     "description": "Triage why a blob is not a usable SAML message.",
     "sql": "SELECT (saml.main.well_formed('not a saml message')).kind AS kind",
-    "expected_result": [{"kind": "not-saml"}]
+    "expected_result": [{"kind": "bad-base64"}]
   },
   {
     "description": "Base64-decode a SAMLResponse POST field to its XML text.",
@@ -130,18 +130,21 @@ impl ScalarFunction for Attributes {
         "attributes"
     }
     fn metadata(&self) -> FunctionMetadata {
-        let examples = vec![FunctionExample {
-            sql: "SELECT a.name, a.value FROM UNNEST(saml.main.attributes('<saml:Assertion \
+        let examples = vec![
+            FunctionExample {
+                sql: "SELECT a.name, a.value FROM UNNEST(saml.main.attributes('<saml:Assertion \
                   xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"><saml:AttributeStatement>\
                   <saml:Attribute Name=\"role\"><saml:AttributeValue>admin\
                   </saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue>\
                   </saml:Attribute></saml:AttributeStatement></saml:Assertion>')) AS _(a) \
                   ORDER BY a.value;"
-                .into(),
-            description: "Explode a multi-valued attribute to long form (one row per value)."
-                .into(),
-            expected_output: None,
-        }];
+                    .into(),
+                description: "Explode a multi-valued attribute to long form (one row per value)."
+                    .into(),
+                expected_output: None,
+            },
+            crate::composed::example(crate::composed::SUBJECT_ROLES),
+        ];
         let mut tags = crate::meta::object_tags(
             "Explode SAML Attributes",
             "Return a SAML assertion's AttributeStatement(s) as a \
@@ -329,16 +332,19 @@ impl ScalarFunction for Assertions {
         "assertions"
     }
     fn metadata(&self) -> FunctionMetadata {
-        let examples = vec![FunctionExample {
-            sql: "SELECT a.idx, a.id, a.parent \
+        let examples = vec![
+            FunctionExample {
+                sql: "SELECT a.idx, a.id, a.parent \
                   FROM UNNEST(saml.main.assertions('<samlp:Response \
                   xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" \
                   xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">\
                   <saml:Assertion ID=\"_a1\"/></samlp:Response>')) AS _(a) ORDER BY a.idx;"
-                .into(),
-            description: "Enumerate assertions and their parents to reveal wrapping.".into(),
-            expected_output: None,
-        }];
+                    .into(),
+                description: "Enumerate assertions and their parents to reveal wrapping.".into(),
+                expected_output: None,
+            },
+            crate::composed::example(crate::composed::UNSIGNED_ASSERTIONS),
+        ];
         let mut tags = crate::meta::object_tags(
             "List SAML Assertions",
             "Return every Assertion in a SAML message as a \

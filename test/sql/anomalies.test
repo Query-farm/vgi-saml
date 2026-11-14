@@ -60,6 +60,19 @@ comment
 tampered
 xsw3
 
+# README example 6 (assertions x signatures): only the XSW3 sibling assertion is
+# not referenced by any signature; every other fixture's assertion is covered.
+query TTT
+SELECT r.name, a.id, a.subject
+FROM raw_saml r, UNNEST(saml.main.assertions(r.saml_response)) AS _(a)
+WHERE a.id NOT IN (
+  SELECT s.references_id
+  FROM UNNEST(saml.main.signatures(r.saml_response)) AS _(s)
+  WHERE s.references_id IS NOT NULL)
+ORDER BY r.name, a.idx;
+----
+xsw3	_evil1	attacker@evil.com
+
 statement ok
 USE memory;
 

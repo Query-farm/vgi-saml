@@ -34,13 +34,17 @@ impl ScalarFunction for WellFormed {
     }
 
     fn metadata(&self) -> FunctionMetadata {
-        let examples = vec![FunctionExample {
-            sql: "SELECT (saml.main.well_formed('not a saml message')).kind;".into(),
-            description: "Classify why a blob is not a usable SAML message (kind = \
-                          'not-saml' here)."
-                .into(),
-            expected_output: None,
-        }];
+        let examples = vec![
+            FunctionExample {
+                sql: "SELECT (saml.main.well_formed('not a saml message')).kind;".into(),
+                description: "Classify why a blob is not a usable SAML message (kind = \
+                          'bad-base64' here: text that is not XML is sniffed as a base64 \
+                          transport wrapper)."
+                    .into(),
+                expected_output: None,
+            },
+            crate::composed::example(crate::composed::TRIAGE_THEN_DECODE),
+        ];
         let mut tags = crate::meta::object_tags(
             "SAML Well-Formedness",
             "Classify an attacker-controlled blob into a (ok, kind, detail) triage verdict \

@@ -23,6 +23,7 @@
 //! `scalar/` module here is a thin Arrow adapter over it.
 
 mod arrow_io;
+mod composed;
 mod meta;
 mod scalar;
 
@@ -33,6 +34,38 @@ use vgi::Worker;
 /// (VGI328: version belongs in catalog metadata, not a parameterless SQL function).
 fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
+}
+
+/// The schema-level `vgi.example_queries`: single-function starters first, then
+/// every composed (multi-function) query from [`composed::ALL`].
+fn schema_examples() -> Vec<vgi::FunctionExample> {
+    const STARTERS: [(&str, &str); 5] = [
+        (
+            "Identify a SAML message by its root element.",
+            "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>') AS kind",
+        ),
+        (
+            "Triage why a blob is not a usable SAML message.",
+            "SELECT (saml.main.well_formed('not a saml message')).kind AS kind",
+        ),
+        (
+            "Decode an assertion and read its issuer.",
+            "SELECT (saml.main.decode('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).issuer AS issuer",
+        ),
+        (
+            "Base64-decode a SAMLResponse POST field to text.",
+            "SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded",
+        ),
+        (
+            "Count the structural anomaly flags on a message.",
+            "SELECT len(saml.main.anomalies('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>')) AS n",
+        ),
+    ];
+    STARTERS
+        .into_iter()
+        .chain(composed::ALL)
+        .map(composed::example)
+        .collect()
 }
 
 /// Catalog + schema metadata surfaced to DuckDB and the `vgi-lint` linter.
@@ -222,6 +255,21 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                          parameter and return it as one column named xml. Value: \
                          'PHNhbWxwOlJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiLz4%3D'.",
                     ),
+                    (
+                        "unsigned_assertion",
+                        "This SAML Response carries three assertions and two XML signatures. \
+                         Which assertion is not referenced by any of the signatures (the \
+                         signature-wrapping suspect)? Return one VARCHAR column named \
+                         assertion_id holding its ID. XML: \
+                         '<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" ID=\"_r\"><ds:Signature><ds:SignedInfo><ds:Reference URI=\"#_a1\"/></ds:SignedInfo></ds:Signature><saml:Assertion ID=\"_a1\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a2\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion><saml:Assertion ID=\"_a3\"><saml:Issuer>https://idp.example.com</saml:Issuer><ds:Signature><ds:SignedInfo><ds:Reference URI=\"#_a3\"/></ds:SignedInfo></ds:Signature></saml:Assertion></samlp:Response>'.",
+                    ),
+                    (
+                        "subject_role_count",
+                        "For this assertion, return its subject NameID and how many values its \
+                         'role' attribute has, as two columns: subject (VARCHAR) and n_roles \
+                         (BIGINT). XML: \
+                         '<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Subject><saml:NameID>carol@example.com</saml:NameID></saml:Subject><saml:AttributeStatement><saml:Attribute Name=\"dept\"><saml:AttributeValue>it</saml:AttributeValue></saml:Attribute><saml:Attribute Name=\"role\"><saml:AttributeValue>auditor</saml:AttributeValue><saml:AttributeValue>user</saml:AttributeValue><saml:AttributeValue>helpdesk</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion>'.",
+                    ),
                 ]),
             ),
             ("vgi.author".to_string(), "Query.Farm".to_string()),
@@ -320,17 +368,12 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                         .to_string(),
                 ),
                 // VGI515: a JSON list of {description, sql} so every schema-level
-                // example query carries a human-readable description.
+                // example query carries a human-readable description. The
+                // composed (multi-function) queries are shared with the example
+                // list of the function that drives each one.
                 (
                     "vgi.example_queries".to_string(),
-                    r#"[
-  {"description": "Identify a SAML message by its root element.", "sql": "SELECT saml.main.message_type('<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\"/>') AS kind"},
-  {"description": "Triage why a blob is not a usable SAML message.", "sql": "SELECT (saml.main.well_formed('not a saml message')).kind AS kind"},
-  {"description": "Decode an assertion and read its issuer.", "sql": "SELECT (saml.main.decode('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" ID=\"_a\"><saml:Issuer>https://idp.example.com</saml:Issuer></saml:Assertion>')).issuer AS issuer"},
-  {"description": "Base64-decode a SAMLResponse POST field to text.", "sql": "SELECT saml.main.b64decode('PHNhbWw+')::VARCHAR AS decoded"},
-  {"description": "Count the structural anomaly flags on a message.", "sql": "SELECT len(saml.main.anomalies('<saml:Assertion xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\"/>')) AS n"}
-]"#
-                        .to_string(),
+                    crate::meta::example_queries_json(&schema_examples()),
                 ),
             ],
             views: Vec::new(),
