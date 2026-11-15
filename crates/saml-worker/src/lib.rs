@@ -146,7 +146,15 @@ fn catalog_metadata(name: &str) -> CatalogModel {
                  warehouse scale rather than one message at a time in a browser plugin. The signer \
                  certificate SHA-256 fingerprint left-joins against your IdP cert inventory, and \
                  decoded NameIDs can be scrubbed before sharing extracts when the source data is \
-                 sensitive."
+                 sensitive.\n\n\
+                 ## Sources and references\n\n\
+                 - [OASIS SAML V2.0 standard](https://docs.oasis-open.org/security/saml/v2.0/) — \
+                 the core assertion/protocol schemas and the HTTP-Redirect / HTTP-POST bindings \
+                 the decoder follows.\n\
+                 - [W3C XML Signature Syntax and Processing 1.1](https://www.w3.org/TR/xmldsig-core1/) \
+                 — the XML-DSig `Signature` / `SignedInfo` / `Reference` model that is verified.\n\
+                 - [W3C Exclusive XML Canonicalization 1.0](https://www.w3.org/TR/xml-exc-c14n/) — \
+                 the `xml-exc-c14n#` transform applied before digesting and signature checks."
                     .to_string(),
             ),
             (

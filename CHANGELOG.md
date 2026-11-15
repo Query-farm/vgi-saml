@@ -4,6 +4,13 @@ All notable changes to `vgi-saml` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.1] - 2026-11-14
+
+### Changed
+
+- Docs link to upstream sources: the catalog docs now link the OASIS SAML V2.0
+  standard, W3C XML Signature 1.1 and W3C Exclusive XML Canonicalization (vgi-lint VGI183).
+
 ## [0.4.0] - 2026-11-12
 
 ### Changed
