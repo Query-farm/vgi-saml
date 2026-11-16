@@ -210,7 +210,7 @@ byte-for-byte against `signxml`/`lxml`-produced golden vectors (see
 cargo build --release                              # builds target/release/saml-worker
 cargo test --workspace                             # unit + golden vectors + zero-panic fuzz
 cargo clippy --all-targets -- -D warnings
-./run_tests.sh                                     # haybarn SQLLogic E2E (needs the vgi community ext)
+make test-sql                                      # haybarn SQLLogic E2E (needs the vgi community ext)
 ```
 
 ## License

@@ -4,7 +4,7 @@
 # store, no credentials), and every shipped example / agent test task uses a
 # literal SAML message, so the VGI9xx execution rules run the examples against a
 # live worker with no external dependency. The repo's haybarn SQLLogic E2E
-# (`./run_tests.sh`) additionally exercises the natural LATERAL-over-a-column
+# (`make test-sql`) additionally exercises the natural LATERAL-over-a-column
 # shape against committed signed fixtures.
 #
 # No rule is suppressed (`ignore = []`); all metadata and execution rules gate at
